@@ -1,0 +1,209 @@
+/* ======================================== */
+/* style.css - VERSION COMPLETE MISE A JOUR */
+/* ======================================== */
+
+/* --- Réinitialisation simple --- */
+body, h1, h2, h3, p, ul, li, div, input, select, button, label {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+/* --- Styles Généraux --- */
+body {
+    background-color: #f0f2f5;
+    color: #333;
+    line-height: 1.6;
+    padding: 15px;
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+}
+
+/* --- Header --- */
+header {
+    background-color: #333;
+    color: #fff;
+    padding: 15px;
+    margin-bottom: 25px;
+    border-radius: 8px;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+}
+header h1 {
+    text-align: center;
+    margin-bottom: 15px;
+    font-size: 1.8em;
+}
+.global-controls {
+    display: flex;
+    justify-content: space-around;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 15px 20px;
+}
+.control-item {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+.control-item label {
+    font-size: 1em;
+    color: #eee;
+    cursor: pointer;
+}
+.control-item input[type="number"],
+.control-item select {
+    padding: 8px 10px;
+    font-size: 1em;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+    min-width: 60px;
+    background-color: #f8f9fa;
+}
+.control-item input[type="checkbox"] {
+    width: 18px;
+    height: 18px;
+    cursor: pointer;
+}
+.button-prominent {
+    padding: 10px 20px !important;
+    font-size: 1.1em !important;
+    background-color: #198754 !important;
+    color: white;
+    border: none;
+    border-radius: 5px;
+    cursor: pointer;
+    transition: background-color 0.2s ease, transform 0.1s ease;
+}
+.button-prominent:hover { background-color: #157347 !important; }
+.button-prominent:active { transform: scale(0.98); }
+.button-prominent.playing { background-color: #ffc107 !important; color: #333; }
+.button-prominent.playing:hover { background-color: #e0a800 !important; }
+
+/* Métronome */
+#metronome-indicator {
+    width: 24px; height: 24px; background-color: #ccc; border-radius: 50%;
+    margin: 0 15px; transition: background-color 0.05s ease-in-out;
+    box-shadow: inset 0 0 3px rgba(0,0,0,0.3);
+    display: flex; justify-content: center; align-items: center;
+    color: white; font-size: 13px; font-weight: bold;
+    text-shadow: 1px 1px 1px rgba(0, 0, 0, 0.4); line-height: 1;
+}
+#metronome-indicator.strong-beat { background-color: #dc3545; }
+#metronome-indicator.weak-beat { background-color: #ffca2c; }
+
+/* --- Layout Principal en Deux Colonnes --- */
+.main-content-area.two-column-layout {
+    display: flex;
+    flex-direction: row;
+    gap: 25px;
+    flex-wrap: wrap;
+}
+.column {
+    display: flex;
+    flex-direction: column;
+    gap: 25px; /* Espace entre les cartes DANS une colonne */
+}
+.column-left {
+    flex: 3; /* Ratio 3:2 */
+    min-width: 350px; /* Largeur minimum avant empilement */
+}
+.column-right {
+    flex: 2;
+    min-width: 300px; /* Largeur minimum avant empilement */
+}
+
+/* Style commun pour les "cartes" (sections) */
+.card-layout {
+    background: #fff;
+    padding: 20px;
+    border-radius: 8px;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.08);
+    /* width: 100%;  Prend la largeur de sa colonne */
+}
+
+/* --- Styles spécifiques aux sections --- */
+
+/* Colonne Gauche: Affichage Accord */
+.chord-display-area h2.chord-title { text-align: left; margin: 0; color: #333; font-size: 1.6em; flex-grow: 1; }
+#displayed-chord-name { color: #0d6efd; font-weight: bold; }
+.title-voicing-group { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; gap: 15px; border-bottom: 1px solid #eee; padding-bottom: 15px; }
+.voicing-controls { text-align: right; }
+.voicing-controls span { margin: 0 5px; font-size: 0.9em; color: #666; }
+.voicing-controls button { padding: 5px 12px; font-size: 1em; cursor: pointer; }
+.display-views { display: flex; gap: 20px; justify-content: center; flex-wrap: wrap; }
+.chord-diagram-view, .fretboard-view { flex: 1; min-width: 200px; max-width: 400px; text-align: center; }
+.chord-diagram-view h3, .fretboard-view h3 { margin-bottom: 10px; color: #555; font-size: 1em; font-weight: normal; text-transform: uppercase; letter-spacing: 0.5px; }
+#chord-diagram, #fretboard-visualization { padding: 0; border: 1px solid #eee; background-color: #fdfdfd; border-radius: 4px; min-height: 185px; display: flex; justify-content: center; align-items: center; }
+#chord-diagram svg, #fretboard-visualization svg { max-width: 100%; height: auto; }
+
+/* Colonne Gauche: Liste Chanson */
+.song-list-area h3 { margin-bottom: 15px; color: #444; border-bottom: 1px solid #eee; padding-bottom: 8px; font-size: 1.1em; }
+.sequence-list-box { list-style: none; padding: 0; max-height: 350px; overflow-y: auto; border: 1px solid #eee; background-color: #fdfdfd; border-radius: 4px; }
+.sequence-list-box li { padding: 8px 12px; border-bottom: 1px solid #f0f0f0; }
+.sequence-list-box li:last-child { border-bottom: none; }
+#sequence-list li.playing-step { background-color: #cfe2ff; font-weight: bold; border-left: 4px solid #0d6efd; padding-left: 8px; }
+#clear-sequence-btn { margin-top: 15px; width: auto; display: inline-block; padding: 8px 20px; cursor: pointer; border-radius: 4px; color: white; background-color: #6c757d; border: none;}
+#clear-sequence-btn:hover { background-color: #5a6268; }
+
+
+/* Colonne Droite: Ajout Accord */
+.sequence-input h3 { margin-bottom: 15px; color: #444; border-bottom: 1px solid #eee; padding-bottom: 8px; font-size: 1.1em; }
+.sequence-input div { margin-bottom: 12px; }
+.sequence-input label { display: block; margin-bottom: 5px; font-size: 0.9em; color: #555; }
+.sequence-input input[type="text"], .sequence-input input[type="number"] { width: 100%; padding: 8px; border: 1px solid #ccc; border-radius: 4px; }
+.suggestions { border: 1px dashed #ccc; background-color: #f9f9f9; padding: 10px; min-height: 40px; color: #aaa; border-radius: 4px; margin-top: 5px; font-size: 0.9em; }
+.suggestion-item { cursor: pointer; padding: 3px 5px; color: #333; }
+.suggestion-item:hover { background-color: #e9ecef; }
+.input-actions { display: flex; gap: 10px; margin-top: 15px; }
+/* Le bouton Prévisualiser n'existe plus */
+.input-actions button { flex-grow: 1; padding: 10px; font-size: 0.95em; cursor: pointer; border-radius: 4px; border: 1px solid transparent;}
+#add-chord-btn { background-color: #0d6efd; color: white; border-color: #0d6efd;}
+#add-chord-btn:hover { background-color: #0b5ed7; border-color: #0b5ed7;}
+
+/* Colonne Droite: Gestion Chansons */
+.song-management-sub-area h3 { margin-bottom: 15px; color: #444; border-bottom: 1px solid #eee; padding-bottom: 8px; font-size: 1.1em; }
+.song-management-sub-area .song-name-section,
+.song-management-sub-area .song-select-section { display: flex; align-items: center; gap: 8px; margin-bottom: 12px; flex-wrap: wrap; /* Permet retour à la ligne interne si besoin */ }
+.song-management-sub-area label { display: inline-block; margin-bottom: 0; flex-shrink: 0; font-size: 0.9em; color: #555; }
+#song-name-input, #saved-songs-select { flex-grow: 1; padding: 8px; border: 1px solid #ccc; border-radius: 4px; min-width: 120px; /* Réduit un peu */ }
+#save-song-btn, #load-song-btn, #delete-song-btn { padding: 6px 10px; font-size: 1.1em; flex-shrink: 0; cursor: pointer; border: none; border-radius: 4px; color: white; }
+#save-song-btn { background-color: #0d6efd; } #save-song-btn:hover { background-color: #0b5ed7; }
+#load-song-btn { background-color: #198754; } #load-song-btn:hover { background-color: #157347; }
+#delete-song-btn { background-color: #dc3545; } #delete-song-btn:hover { background-color: #bb2d3b; }
+
+
+/* --- Footer --- */
+footer { text-align: center; margin-top: 30px; padding-top: 15px; border-top: 1px solid #ddd; color: #888; font-size: 0.9em;}
+
+
+/* --- Responsive --- */
+/* Applique quand écran <= 768px */
+@media (max-width: 768px) {
+    body { padding: 10px; }
+    header { padding: 10px; margin-bottom: 20px; }
+    header h1 { font-size: 1.5em; }
+    /* Empile contrôles header */
+    .global-controls { flex-direction: column; align-items: stretch; gap: 12px; }
+    .control-item { justify-content: space-between; }
+    #metronome-indicator { margin: 10px auto; }
+
+    /* Empile les colonnes principales */
+    .main-content-area.two-column-layout { flex-direction: column; }
+    .column-left, .column-right { min-width: unset; flex-basis: auto; }
+
+    /* Styles internes (restent utiles) */
+     .display-views { flex-direction: column; align-items: center; gap: 15px;}
+     .title-voicing-group { flex-direction: column; align-items: stretch; border-bottom: none; padding-bottom: 0; }
+     .chord-display-area h2.chord-title { text-align: center; margin-bottom: 10px; }
+     .voicing-controls { text-align: center; margin-bottom: 15px; }
+     .chord-diagram-view, .fretboard-view { max-width: 95%; } /* Prend quasi toute largeur mobile */
+
+     /* Assure que les boutons save/load/delete peuvent passer à la ligne */
+    .song-management-sub-area .song-name-section,
+    .song-management-sub-area .song-select-section { flex-wrap: wrap; }
+}
+
+/* Style pour corriger un léger décalage potentiel du SVG dans les conteneurs flex */
+#chord-diagram svg, #fretboard-visualization svg {
+    display: block; /* Empêche l'espace blanc sous le SVG inline */
+    margin: auto;   /* Centre le SVG si son conteneur est flex */
+}

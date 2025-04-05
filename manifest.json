@@ -1,0 +1,25 @@
+{
+    "name": "Guitare - Gratte & Chante",
+    "short_name": "GratteApp",
+    "description": "Application d'aide pour guitaristes avec séquences d'accords et optimisation des doigtés.",
+    "start_url": "./index.html", // Point d'entrée de l'app
+    "display": "standalone", // Comportement type application (sans barre d'URL navigateur)
+    "background_color": "#ffffff", // Couleur de fond de l'écran de démarrage
+    "theme_color": "#333333", // Couleur de la barre de titre (idem header)
+    "orientation": "any", // Permet toutes les orientations
+    "icons": [
+      {
+        "src": "./icon-192.png", // Chemin vers votre icône 192x192
+        "sizes": "192x192",
+        "type": "image/png",
+        "purpose": "any maskable" // Permet une meilleure intégration sur certains OS
+      },
+      {
+        "src": "./icon-512.png", // Chemin vers votre icône 512x512
+        "sizes": "512x512",
+        "type": "image/png",
+         "purpose": "any maskable"
+      }
+      // Ajoutez d'autres tailles si nécessaire (ex: 144x144, 256x256...)
+    ]
+  }

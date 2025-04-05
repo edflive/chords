@@ -1,0 +1,206 @@
+[
+    {
+      "name": "C Major", "root": "C", "quality": "Major", "aliases": ["Do", "C", "CMaj"],
+      "voicings": [
+        {"positionName": "Open", "frets": [-1, 3, 2, 0, 1, 0], "fingers": [0, 3, 2, 0, 1, 0]},
+        {"positionName": "A-Shape @3 Fret", "frets": [-1, 3, 5, 5, 5, 3], "fingers": [0, 1, 3, 4, 2, 1]},
+        {"positionName": "E-Shape Barre @8", "frets": [8, 10, 10, 9, 8, 8], "fingers": [1, 3, 4, 2, 1, 1]}
+      ]
+    },
+    {
+      "name": "C minor", "root": "C", "quality": "minor", "aliases": ["Cm", "Cmin"],
+      "voicings": [
+        {"positionName": "Am-Shape Barre @3", "frets": [-1, 3, 5, 5, 4, 3], "fingers": [0, 1, 3, 4, 2, 1]},
+        {"positionName": "Em-Shape Barre @8", "frets": [8, 10, 10, 8, 8, 8], "fingers": [1, 3, 4, 1, 1, 1]}
+      ]
+    },
+    {
+      "name": "C7", "root": "C", "quality": "7", "aliases": ["Cdom7"],
+      "voicings": [
+        {"positionName": "Open", "frets": [-1, 3, 2, 3, 1, 0], "fingers": [0, 3, 2, 4, 1, 0]},
+        {"positionName": "E-Shape Barre @8", "frets": [8, 10, 8, 9, 8, 8], "fingers": [1, 3, 1, 2, 1, 1]}
+      ]
+    },
+    {
+      "name": "C Major 7", "root": "C", "quality": "maj7", "aliases": ["CM7", "Cmaj7"],
+      "voicings": [
+        {"positionName": "Open", "frets": [-1, 3, 2, 0, 0, 0], "fingers": [0, 3, 2, 0, 0, 0]},
+        {"positionName": "A-Shape @3 Fret", "frets": [-1, 3, 5, 4, 5, 3], "fingers": [0, 1, 3, 2, 4, 1]}
+      ]
+    },
+    {
+      "name": "C minor 7", "root": "C", "quality": "m7", "aliases": ["Cm7"],
+      "voicings": [
+        {"positionName": "Am7-Shape Barre @3", "frets": [-1, 3, 5, 3, 4, 3], "fingers": [0, 1, 3, 1, 2, 1]},
+        {"positionName": "Em7-Shape Barre @8", "frets": [8, 10, 8, 8, 8, 8], "fingers": [1, 3, 1, 1, 1, 1]}
+      ]
+    },
+    {
+      "name": "D Major", "root": "D", "quality": "Major", "aliases": ["D", "DM", "Dmaj"],
+      "voicings": [
+        {"positionName": "Open", "frets": [-1, -1, 0, 2, 3, 2], "fingers": [0, 0, 0, 1, 3, 2]},
+        {"positionName": "A-Shape Barre @5", "frets": [-1, 5, 7, 7, 7, 5], "fingers": [0, 1, 3, 4, 2, 1]}
+      ]
+    },
+    {
+      "name": "D minor", "root": "D", "quality": "minor", "aliases": ["Dm", "Dmin"],
+      "voicings": [
+        {"positionName": "Open", "frets": [-1, -1, 0, 2, 3, 1], "fingers": [0, 0, 0, 2, 3, 1]},
+        {"positionName": "Am-Shape Barre @5", "frets": [-1, 5, 7, 7, 6, 5], "fingers": [0, 1, 3, 4, 2, 1]}
+      ]
+    },
+    {
+      "name": "D7", "root": "D", "quality": "7", "aliases": ["Ddom7"],
+      "voicings": [
+        {"positionName": "Open", "frets": [-1, -1, 0, 2, 1, 2], "fingers": [0, 0, 0, 2, 1, 3]},
+        {"positionName": "A7-Shape Barre @5", "frets": [-1, 5, 7, 5, 7, 5], "fingers": [0, 1, 3, 1, 4, 1]}
+      ]
+    },
+      {
+      "name": "D minor 7", "root": "D", "quality": "m7", "aliases": ["Dm7"],
+      "voicings": [
+        {"positionName": "Open", "frets": [-1, -1, 0, 2, 1, 1], "fingers": [0, 0, 0, 2, 1, 1]},
+        {"positionName": "Am7-Shape Barre @5", "frets": [-1, 5, 7, 5, 6, 5], "fingers": [0, 1, 3, 1, 2, 1]}
+      ]
+    },
+    {
+      "name": "E Major", "root": "E", "quality": "Major", "aliases": ["E", "EM", "Emaj"],
+      "voicings": [
+        {"positionName": "Open", "frets": [0, 2, 2, 1, 0, 0], "fingers": [0, 2, 3, 1, 0, 0]},
+        {"positionName": "A-Shape Barre @7", "frets": [-1, 7, 9, 9, 9, 7], "fingers": [0, 1, 3, 4, 2, 1]}
+      ]
+    },
+    {
+      "name": "E minor", "root": "E", "quality": "minor", "aliases": ["Em", "Emin"],
+      "voicings": [
+        {"positionName": "Open", "frets": [0, 2, 2, 0, 0, 0], "fingers": [0, 2, 3, 0, 0, 0]},
+        {"positionName": "Am-Shape Barre @7", "frets": [-1, 7, 9, 9, 8, 7], "fingers": [0, 1, 3, 4, 2, 1]}
+      ]
+    },
+    {
+      "name": "E7", "root": "E", "quality": "7", "aliases": ["Edom7"],
+      "voicings": [
+        {"positionName": "Open", "frets": [0, 2, 0, 1, 0, 0], "fingers": [0, 2, 0, 1, 0, 0]},
+        {"positionName": "A7-Shape Barre @7", "frets": [-1, 7, 9, 7, 9, 7], "fingers": [0, 1, 3, 1, 4, 1]}
+      ]
+    },
+    {
+      "name": "E minor 7", "root": "E", "quality": "m7", "aliases": ["Em7"],
+      "voicings": [
+        {"positionName": "Open", "frets": [0, 2, 0, 0, 0, 0], "fingers": [0, 2, 0, 0, 0, 0]},
+        {"positionName": "Am7-Shape Barre @7", "frets": [-1, 7, 9, 7, 8, 7], "fingers": [0, 1, 3, 1, 2, 1]}
+      ]
+    },
+    {
+      "name": "F Major", "root": "F", "quality": "Major", "aliases": ["F", "FM", "Fmaj"],
+      "voicings": [
+        {"positionName": "E-Shape Barre @1", "frets": [1, 3, 3, 2, 1, 1], "fingers": [1, 3, 4, 2, 1, 1]},
+        {"positionName": "A-Shape Barre @8", "frets": [-1, 8, 10, 10, 10, 8], "fingers": [0, 1, 3, 4, 2, 1]}
+      ]
+    },
+      {
+      "name": "F minor", "root": "F", "quality": "minor", "aliases": ["Fm", "Fmin"],
+      "voicings": [
+        {"positionName": "Em-Shape Barre @1", "frets": [1, 3, 3, 1, 1, 1], "fingers": [1, 3, 4, 1, 1, 1]},
+        {"positionName": "Am-Shape Barre @8", "frets": [-1, 8, 10, 10, 9, 8], "fingers": [0, 1, 3, 4, 2, 1]}
+      ]
+    },
+    {
+      "name": "F7", "root": "F", "quality": "7", "aliases": ["Fdom7"],
+      "voicings": [
+        {"positionName": "E7-Shape Barre @1", "frets": [1, 3, 1, 2, 1, 1], "fingers": [1, 3, 1, 2, 1, 1]},
+        {"positionName": "A7-Shape Barre @8", "frets": [-1, 8, 10, 8, 10, 8], "fingers": [0, 1, 3, 1, 4, 1]}
+      ]
+    },
+      {
+      "name": "F Major 7", "root": "F", "quality": "maj7", "aliases": ["FM7", "Fmaj7"],
+      "voicings": [
+        {"positionName": "Open Variation", "frets": [-1, -1, 3, 2, 1, 0], "fingers": [0, 0, 3, 2, 1, 0]},
+        {"positionName": "Emaj7-Shape Barre @1", "frets": [1, 3, 2, 2, 1, 1], "fingers": [1, 4, 2, 3, 1, 1]}
+      ]
+    },
+    {
+      "name": "G Major", "root": "G", "quality": "Major", "aliases": ["G", "GM", "Gmaj"],
+      "voicings": [
+        {"positionName": "Open (4 fingers)", "frets": [3, 2, 0, 0, 3, 3], "fingers": [2, 1, 0, 0, 3, 4]},
+        {"positionName": "E-Shape Barre @3", "frets": [3, 5, 5, 4, 3, 3], "fingers": [1, 3, 4, 2, 1, 1]}
+      ]
+    },
+      {
+      "name": "G minor", "root": "G", "quality": "minor", "aliases": ["Gm", "Gmin"],
+      "voicings": [
+        {"positionName": "Em-Shape Barre @3", "frets": [3, 5, 5, 3, 3, 3], "fingers": [1, 3, 4, 1, 1, 1]},
+        {"positionName": "Am-Shape Barre @10", "frets": [-1, 10, 12, 12, 11, 10], "fingers": [0, 1, 3, 4, 2, 1]}
+      ]
+    },
+    {
+      "name": "G7", "root": "G", "quality": "7", "aliases": ["Gdom7"],
+      "voicings": [
+        {"positionName": "Open", "frets": [3, 2, 0, 0, 0, 1], "fingers": [3, 2, 0, 0, 0, 1]},
+        {"positionName": "E7-Shape Barre @3", "frets": [3, 5, 3, 4, 3, 3], "fingers": [1, 3, 1, 2, 1, 1]}
+      ]
+    },
+      {
+      "name": "G Major 7", "root": "G", "quality": "maj7", "aliases": ["GM7", "Gmaj7"],
+      "voicings": [
+        {"positionName": "Open", "frets": [3, 2, 0, 0, 0, 2], "fingers": [3, 2, 0, 0, 0, 1]},
+        {"positionName": "Emaj7-Shape Barre @3", "frets": [3, 5, 4, 4, 3, -1], "fingers": [1, 4, 2, 3, 1, 0]}
+      ]
+    },
+    {
+      "name": "A Major", "root": "A", "quality": "Major", "aliases": ["La", "A", "Amaj"],
+      "voicings": [
+        {"positionName": "Open", "frets": [-1, 0, 2, 2, 2, 0], "fingers": [0, 0, 1, 2, 3, 0]},
+        {"positionName": "E-Shape Barre @5", "frets": [5, 7, 7, 6, 5, 5], "fingers": [1, 3, 4, 2, 1, 1]}
+      ]
+    },
+    {
+      "name": "A minor", "root": "A", "quality": "minor", "aliases": ["Am", "Amin"],
+      "voicings": [
+        {"positionName": "Open", "frets": [-1, 0, 2, 2, 1, 0], "fingers": [0, 0, 2, 3, 1, 0]},
+        {"positionName": "Em-Shape Barre @5", "frets": [5, 7, 7, 5, 5, 5], "fingers": [1, 3, 4, 1, 1, 1]}
+      ]
+    },
+      {
+      "name": "A7", "root": "A", "quality": "7", "aliases": ["Adom7"],
+      "voicings": [
+        {"positionName": "Open", "frets": [-1, 0, 2, 0, 2, 0], "fingers": [0, 0, 2, 0, 3, 0]},
+        {"positionName": "E7-Shape Barre @5", "frets": [5, 7, 5, 6, 5, 5], "fingers": [1, 3, 1, 2, 1, 1]}
+      ]
+    },
+    {
+      "name": "A minor 7", "root": "A", "quality": "m7", "aliases": ["Am7"],
+      "voicings": [
+        {"positionName": "Open", "frets": [-1, 0, 2, 0, 1, 0], "fingers": [0, 0, 2, 0, 1, 0]},
+        {"positionName": "Em7-Shape Barre @5", "frets": [5, 7, 5, 5, 5, 5], "fingers": [1, 3, 1, 1, 1, 1]}
+      ]
+    },
+      {
+      "name": "B Major", "root": "B", "quality": "Major", "aliases": ["B", "BM", "Bmaj"],
+      "voicings": [
+        {"positionName": "A-Shape Barre @2", "frets": [-1, 2, 4, 4, 4, 2], "fingers": [0, 1, 3, 4, 2, 1]},
+        {"positionName": "E-Shape Barre @7", "frets": [7, 9, 9, 8, 7, 7], "fingers": [1, 3, 4, 2, 1, 1]}
+      ]
+    },
+      {
+      "name": "B minor", "root": "B", "quality": "minor", "aliases": ["Bm", "Bmin"],
+      "voicings": [
+        {"positionName": "Am-Shape Barre @2", "frets": [-1, 2, 4, 4, 3, 2], "fingers": [0, 1, 3, 4, 2, 1]},
+        {"positionName": "Em-Shape Barre @7", "frets": [7, 9, 9, 7, 7, 7], "fingers": [1, 3, 4, 1, 1, 1]}
+      ]
+    },
+     {
+      "name": "B7", "root": "B", "quality": "7", "aliases": ["Bdom7"],
+      "voicings": [
+        {"positionName": "Open Variation", "frets": [-1, 2, 1, 2, 0, 2], "fingers": [0, 2, 1, 3, 0, 4]},
+        {"positionName": "E7-Shape Barre @7", "frets": [7, 9, 7, 8, 7, 7], "fingers": [1, 3, 1, 2, 1, 1]}
+      ]
+    },
+      {
+      "name": "B minor 7", "root": "B", "quality": "m7", "aliases": ["Bm7"],
+      "voicings": [
+        {"positionName": "Am7-Shape Barre @2", "frets": [-1, 2, 4, 2, 3, 2], "fingers": [0, 1, 4, 1, 3, 1]},
+        {"positionName": "Em7-Shape Barre @7", "frets": [7, 9, 7, 7, 7, 7], "fingers": [1, 3, 1, 1, 1, 1]}
+      ]
+    }
+  ]

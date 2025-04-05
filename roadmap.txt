@@ -1,0 +1,63 @@
+# Roadmap - Assistant Guitare Web App (v2)
+
+## Phase 1: Maquette et Structure (Révisée)
+    [X] Créer la structure HTML (`index.html`) avec les zones principales.
+    [X] Créer la feuille de style de base (`style.css`) pour la mise en page.
+    [X] Inclure des placeholders et descriptions pour toutes les fonctionnalités prévues.
+    [X] **RÉVISION v2:** Ajustement taille Tempo/Mesure, visibilité bouton Play, ajout bouton Preview Transition, clarification workflow de voicing pendant l'input.
+    [X] **À FAIRE :** Examiner la maquette v2 et confirmer/ajuster le design et l'agencement.
+
+## Phase 2: Représentation des Données d'Accords (Inchangé)
+    [X] Définir la structure de données (probablement JSON) pour un accord (nom, qualité, racine).
+    [X] Définir la structure pour un "voicing" (doigté spécifique) : frettes (tableau), doigts (tableau), cordes jouées/mutées.
+    [X] Créer un fichier `chords.json` (ou objet JS) contenant quelques accords courants avec plusieurs voicings.
+    [X] Créer un fichier `script.js` et écrire le code de base pour charger/accéder à ces données d'accords.
+
+## Phase 3: Affichage Statique d'un Accord (Inchangé - sera utilisé dynamiquement)
+    [X] Implémenter la fonction JS pour dessiner le diagramme d'accord classique (grille) dans `#chord-diagram`.
+    [X] Implémenter la fonction JS pour dessiner la visualisation du manche dans `#fretboard-visualization`.
+    [X] Connecter les données (Phase 2) pour afficher un accord spécifique (sera appelé par Phase 5).
+    [X] Afficher les indicateurs de cordes jouées/mutées (X/O).
+    [X] Mettre à jour `#displayed-chord-name` avec le nom de l'accord affiché.
+
+## Phase 4: Logique de Tempo et Lecture de Séquence (Globale) (Peu changé)
+    [X] Implémenter la lecture/mise à jour du contrôle de Tempo et Mesure.
+    [X] Créer le timer JavaScript basé sur le tempo.
+    [X] Implémenter la logique du bouton Play/Pause (`#sequence-play-pause-btn`) pour démarrer/arrêter la lecture de la séquence *enregistrée*.
+    [X] Logique pour parcourir la séquence *enregistrée* (issue de Phase 5) et mettre à jour l'affichage principal (Phase 3) à chaque temps/mesure.
+
+## Phase 5: Saisie et Gestion de la Séquence Utilisateur (Refondue)
+    [X] Gérer la saisie dans le champ `#chord-input`.
+    [X] Implémenter l'affichage des suggestions dynamiques (basées sur Phase 2).
+    [X] **NOUVEAU WORKFLOW :**
+        [ ] Quand un accord est sélectionné/validé dans l'input :
+            [ ] Lire le *dernier* accord ajouté à la séquence (s'il existe).
+            [ ] **(Pré-requis: Phase 6 Partielle)** Calculer/proposer le voicing optimisé pour le nouvel accord.
+            [ ] **(Pré-requis: Phase 3)** Afficher ce voicing *proposé* dans la zone d'affichage principale.
+            [ ] **(Pré-requis: Phase 7 Partielle)** Activer les boutons +/- (`#voicing-down-btn`, `#voicing-up-btn`) pour permettre à l'utilisateur d'ajuster le voicing *proposé*.
+    [X] Gérer la saisie de la durée (`#chord-duration`).
+    [X] Implémenter la logique (pour l'instant, vide) du bouton "Prévisualiser Transition" (`#preview-transition-btn`).
+    [X] Implémenter le bouton "Ajouter à la séquence": stocker l'accord, le *voicing actuellement affiché* et sa durée dans le tableau de séquence JS.
+    [X] Mettre à jour l'affichage de la liste `#sequence-list`.
+    [X] Implémenter le bouton "Effacer Séquence".
+
+## Phase 6: Optimisation des Voicings (Logique principale)
+    [X] Définir et implémenter une fonction de "coût" JS pour mesurer l'effort/distance entre deux doigtés.
+    [X] Développer l'algorithme JS qui, étant donné un accord précédent et un nouvel accord, trouve le voicing du nouvel accord qui minimise le coût.
+    [X] **NOTE:** Cette fonction sera appelée principalement lors de la Phase 5 (pendant l'input).
+    [X] Identifier le(s) doigt(s) pivot(s) pendant le calcul du coût.
+    [X] Mettre à jour l'affichage (Phase 3) pour indiquer visuellement le doigt pivot (ex: couleur, style) - peut être fait plus tardivement.
+
+## Phase 7: Variation de Voicing (+/-) (Logique principale)
+    [X] Implémenter la logique JS pour trouver un voicing du même accord plus haut/bas sur le manche (depuis `chords.json`).
+    [X] **NOTE:** Cette logique sera appelée par les boutons +/- (activés lors de la Phase 5 pour le voicing proposé).
+    [X] Gérer les cas limites (pas de voicing plus haut/bas).
+
+## Phase 8: Finalisation et Améliorations (Inchangé)
+    [ ] Peaufiner le design CSS.
+    [ ] Ajouter des validations et gestion d'erreurs.
+    [ ] Ajouter la fonctionnalité audio pour "Prévisualiser Transition" et la lecture globale.
+    [ ] Tester sur différents navigateurs / tailles d'écran.
+    [ ] Optimiser le code JavaScript si nécessaire.
+    [ ] (Optionnel) Explorer les PWA.
+    [ ] (Optionnel) Enrichir `chords.json`.

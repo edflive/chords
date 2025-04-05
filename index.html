@@ -1,0 +1,102 @@
+<!DOCTYPE html>
+<html lang="fr">
+  <head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Guitare - Gratte & Chante</title>
+    <link rel="stylesheet" href="style.css">
+    <link rel="manifest" href="manifest.json">
+    <meta name="theme-color" content="#333333"/>
+  </head>
+  <body>
+    <header>
+      <h1>Guitare - Gratte & Chante</h1>
+      <div class="global-controls">
+        <div class="control-item tempo-control">
+          <label for="tempo">Tempo:</label>
+          <input type="number" id="tempo" value="100" min="40" max="240"> BPM
+        </div>
+        <div id="metronome-indicator" title="Indicateur Métronome"></div>
+        <div class="control-item time-signature-control">
+          <label for="time-signature">Mesure:</label>
+          <select id="time-signature">
+            <option selected>4/4</option>
+            <option>3/4</option>
+            <option>6/8</option>
+          </select>
+        </div>
+        <div class="control-item audio-toggle">
+          <label for="audio-enabled" title="Activer/Désactiver le son (fonctionnalité future)">Audio:</label>
+          <input type="checkbox" id="audio-enabled" name="audio-enabled">
+        </div>
+        <div class="control-item playback-controls">
+          <button id="sequence-play-pause-btn" class="button-prominent">▶️ Jouer la chanson</button>
+        </div>
+      </div>
+    </header>
+    <main class="main-content-area two-column-layout">
+      <div class="column column-left">
+        <section class="chord-display-area card-layout">
+          <div class="title-voicing-group">
+            <h2 class="chord-title">Accord : <span id="displayed-chord-name">--</span></h2>
+            <div class="voicing-controls">
+              <button id="voicing-down-btn" title="Voicing plus grave">-</button>
+              <span>Voicing</span>
+              <button id="voicing-up-btn" title="Voicing plus aigu">+</button>
+            </div>
+          </div>
+          <div class="display-views">
+            <div class="chord-diagram-view">
+              <h3>Diagramme</h3>
+              <div id="chord-diagram"></div>
+            </div>
+            <div class="fretboard-view">
+              <h3>Manche</h3>
+              <div id="fretboard-visualization"></div>
+            </div>
+          </div>
+        </section>
+        <section class="song-list-area card-layout">
+          <h3>Chanson Actuelle</h3>
+          <ul id="sequence-list" class="sequence-list-box">
+            <li>(Chanson vide)</li>
+          </ul>
+          <button id="clear-sequence-btn">Tout Effacer</button>
+        </section>
+      </div>
+
+      <div class="column column-right">
+
+        <section class="sequence-input card-layout">
+            <h3>Ajouter un accord</h3>
+            <input type="text" id="chord-input" placeholder="Ex: Am7, G, Cmaj7...">
+            <div id="chord-suggestions" class="suggestions"></div>
+            <div>
+                <label for="chord-duration">Durée (temps):</label>
+                <input type="number" id="chord-duration" value="2" min="1">
+            </div>
+            <div class="input-actions">
+                 <button id="add-chord-btn">➕ Ajouter</button>
+            </div>
+        </section> <section class="song-management-sub-area card-layout">
+             <h3>Gestion des Chansons</h3>
+             <div class="song-name-section">
+                 <label for="song-name-input">Nom Actuel/Nouveau:</label>
+                 <input type="text" id="song-name-input" placeholder="Nom de la chanson...">
+                 <button id="save-song-btn" title="Sauvegarder sous ce nom">💾</button>
+             </div>
+             <div class="song-select-section">
+                  <label for="saved-songs-select">Charger/Supprimer:</label>
+                  <select id="saved-songs-select"> <option value="">-- Choisir --</option> </select>
+                  <button id="load-song-btn" title="Charger la chanson">📂</button>
+                  <button id="delete-song-btn" title="Supprimer la chanson">🗑️</button>
+             </div>
+        </section>
+      </div>
+    </main>
+    <footer>
+      <p>Guitare - Gratte & Chante</p>
+    </footer>
+    <script src="script.js" defer></script>
+  </body>
+</html>
