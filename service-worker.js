@@ -1,6 +1,6 @@
 // service-worker.js
 
-const CACHE_NAME = 'gratte-app-cache-v1.00'; // Versionnez votre cache !
+const CACHE_NAME = 'gratte-app-cache-v1.01'; // Versionnez votre cache !
 const FILES_TO_CACHE = [
   './', // Important pour la racine et potentiellement start_url '.'
   './index.html',
