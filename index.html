@@ -10,7 +10,7 @@
   </head>
   <body>
     <header>
-      <h1>Guitare - Gratte & Chante</h1>
+      <h1>Gratte & Chante</h1>
       <div class="global-controls">
         <div class="control-item tempo-control">
           <label for="tempo">Tempo:</label>
@@ -40,9 +40,11 @@
           <div class="title-voicing-group">
             <h2 class="chord-title">Accord : <span id="displayed-chord-name">--</span></h2>
             <div class="voicing-controls">
-              <button id="voicing-down-btn" title="Voicing plus grave">-</button>
-              <span>Voicing</span>
-              <button id="voicing-up-btn" title="Voicing plus aigu">+</button>
+              <button id="voicing-down-btn" title="Voicing plus grave">&darr;</button>
+              <button id="alt-down-btn" title="Alternative précédente">-</button>
+              <span>Alternatives</span>
+              <button id="alt-up-btn" title="Alternative suivante">+</button>
+              <button id="voicing-up-btn" title="Voicing plus aigu">&uarr;</button>
             </div>
           </div>
           <div class="display-views">
@@ -95,7 +97,7 @@
       </div>
     </main>
     <footer>
-      <p>Guitare - Gratte & Chante</p>
+      <p>Gratte & Chante</p>
     </footer>
     <script src="script.js" defer></script>
   </body>

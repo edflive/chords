@@ -22,14 +22,14 @@ body {
 header {
     background-color: #333;
     color: #fff;
-    padding: 15px;
+    padding: 5px 15px 5px 15px;
     margin-bottom: 25px;
     border-radius: 8px;
     box-shadow: 0 4px 12px rgba(0,0,0,0.1);
 }
 header h1 {
     text-align: center;
-    margin-bottom: 15px;
+    margin-bottom: 5px;
     font-size: 1.8em;
 }
 .global-controls {
@@ -37,41 +37,56 @@ header h1 {
     justify-content: space-around;
     align-items: center;
     flex-wrap: wrap;
-    gap: 15px 20px;
+    gap: 20px;
+    background-color: #fff;
+    padding: 15px 20px;
+    border-radius: 10px;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+    margin-bottom: 20px;
 }
 .control-item {
     display: flex;
     align-items: center;
     gap: 8px;
 }
+
 .control-item label {
-    font-size: 1em;
-    color: #eee;
-    cursor: pointer;
+    font-size: 1.1rem;
+    color: #333;
 }
+
 .control-item input[type="number"],
 .control-item select {
-    padding: 8px 10px;
-    font-size: 1em;
+    padding: 8px 12px;
+    font-size: 1rem;
     border: 1px solid #ccc;
-    border-radius: 4px;
-    min-width: 60px;
-    background-color: #f8f9fa;
+    border-radius: 6px;
+    background-color: #f9f9f9;
+    transition: border-color 0.2s ease;
 }
+
+.control-item input[type="number"]:focus,
+.control-item select:focus {
+    border-color: #0d6efd;
+    outline: none;
+}
+
 .control-item input[type="checkbox"] {
     width: 18px;
     height: 18px;
     cursor: pointer;
 }
+
+
 .button-prominent {
-    padding: 10px 20px !important;
-    font-size: 1.1em !important;
-    background-color: #198754 !important;
+    padding: 10px 20px;
+    font-size: 1.1rem;
+    background-color: #198754;
     color: white;
     border: none;
-    border-radius: 5px;
+    border-radius: 6px;
     cursor: pointer;
-    transition: background-color 0.2s ease, transform 0.1s ease;
+    transition: background-color 0.3s ease, transform 0.1s ease;
 }
 .button-prominent:hover { background-color: #157347 !important; }
 .button-prominent:active { transform: scale(0.98); }
@@ -80,12 +95,16 @@ header h1 {
 
 /* Métronome */
 #metronome-indicator {
-    width: 24px; height: 24px; background-color: #ccc; border-radius: 50%;
-    margin: 0 15px; transition: background-color 0.05s ease-in-out;
-    box-shadow: inset 0 0 3px rgba(0,0,0,0.3);
-    display: flex; justify-content: center; align-items: center;
-    color: white; font-size: 13px; font-weight: bold;
-    text-shadow: 1px 1px 1px rgba(0, 0, 0, 0.4); line-height: 1;
+    width: 30px;
+    height: 30px;
+    background-color: #ccc;
+    border-radius: 50%;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    font-size: 0.9rem;
+    font-weight: bold;
+    box-shadow: inset 0 0 5px rgba(0, 0, 0, 0.2);
 }
 #metronome-indicator.strong-beat { background-color: #dc3545; }
 #metronome-indicator.weak-beat { background-color: #ffca2c; }

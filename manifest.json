@@ -1,6 +1,6 @@
 {
-    "name": "Guitare - Gratte & Chante",
-    "short_name": "GratteApp",
+    "name": "Gratte & Chante",
+    "short_name": "chords",
     "description": "Application d'aide pour guitaristes avec séquences d'accords et optimisation des doigtés.",
     "start_url": "./index.html", // Point d'entrée de l'app
     "display": "standalone", // Comportement type application (sans barre d'URL navigateur)
