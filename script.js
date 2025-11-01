@@ -857,8 +857,60 @@ function renderSequenceList() {
         const listItem = document.createElement('li');
         listItem.textContent = `${index + 1}. ${item.chordId} (${item.duration} temps)`;
         listItem.dataset.index = index;
+        if (index === previouslyHighlightedStepIndex) {
+            listItem.classList.add('playing-step');
+        }
         sequenceListElement.appendChild(listItem);
     });
+}
+
+
+function jumpToSequenceStep(stepIndex) {
+    if (stepIndex < 0 || stepIndex >= userSequence.length) {
+        return;
+    }
+
+    sequenceToPlay = userSequence;
+
+    if (isPlaying) {
+        stopPlayback();
+    } else if (previouslyHighlightedStepIndex >= 0) {
+        const previousLi = sequenceListElement.querySelector(`li[data-index="${previouslyHighlightedStepIndex}"]`);
+        if (previousLi) {
+            previousLi.classList.remove('playing-step');
+        }
+        previouslyHighlightedStepIndex = -1;
+    }
+
+    currentStepInSequence = stepIndex;
+    currentBeatInChord = 0;
+    beatCountSinceStart = userSequence
+        .slice(0, stepIndex)
+        .reduce(
+            (totalBeats, sequenceItem) => totalBeats + sequenceItem.duration,
+            0
+        );
+
+    const selectedChordInfo = userSequence[stepIndex];
+    const chordData = getChordData(selectedChordInfo.chordId);
+    const previousVoicing = stepIndex > 0 ? userSequence[stepIndex - 1].voicing : null;
+    const pivotIndices = identifyPivotFingers(previousVoicing, selectedChordInfo.voicing);
+
+    displayChord(
+        chordData ? chordData.name : selectedChordInfo.chordId,
+        selectedChordInfo.voicing,
+        pivotIndices
+    );
+
+    validatedChordId = selectedChordInfo.chordId;
+    proposedVoicing = selectedChordInfo.voicing;
+    previousVoicingInPlayback = selectedChordInfo.voicing;
+
+    const currentLi = sequenceListElement.querySelector(`li[data-index="${stepIndex}"]`);
+    if (currentLi) {
+        currentLi.classList.add('playing-step');
+    }
+    previouslyHighlightedStepIndex = stepIndex;
 }
 
 
@@ -902,6 +954,21 @@ function validateAndDisplayChordInput() {
 // ==========================================
 // Event Listeners & Initialization
 // ==========================================
+
+
+sequenceListElement.addEventListener('click', (event) => {
+    const clickedItem = event.target.closest('li');
+    if (!clickedItem || !sequenceListElement.contains(clickedItem)) {
+        return;
+    }
+
+    const index = parseInt(clickedItem.dataset.index, 10);
+    if (Number.isNaN(index)) {
+        return;
+    }
+
+    jumpToSequenceStep(index);
+});
 
 
 // Update tempo/time signature when changed by user AND save
