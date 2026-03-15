@@ -33,6 +33,9 @@
           <button id="sequence-play-pause-btn" class="button-prominent">▶️ Jouer la chanson</button>
         </div>
       </div>
+      <div id="app-status" class="app-status app-status-info" role="status" aria-live="polite">
+        Prêt pour construire une progression.
+      </div>
     </header>
     <main class="main-content-area two-column-layout">
       <div class="column column-left">
@@ -59,7 +62,14 @@
           </div>
         </section>
         <section class="song-list-area card-layout">
-          <h3>Chanson Actuelle</h3>
+          <div class="section-heading">
+            <h3>Chanson Actuelle</h3>
+            <div class="sequence-summary" aria-live="polite">
+              <span id="sequence-count" class="summary-pill">0 accord</span>
+              <span id="sequence-duration-total" class="summary-pill">0 temps</span>
+            </div>
+          </div>
+          <p id="sequence-hint" class="section-helper">Ajoute un premier accord pour commencer.</p>
           <ul id="sequence-list" class="sequence-list-box">
             <li>(Chanson vide)</li>
           </ul>
@@ -71,8 +81,9 @@
 
         <section class="sequence-input card-layout">
             <h3>Ajouter un accord</h3>
+            <p class="section-helper">Tape un nom d'accord, utilise les fleches pour choisir une suggestion, puis appuie sur Entree pour l'ajouter.</p>
             <input type="text" id="chord-input" placeholder="Ex: Am7, G, Cmaj7...">
-            <div id="chord-suggestions" class="suggestions"></div>
+            <div id="chord-suggestions" class="suggestions" role="listbox" aria-label="Suggestions d'accords"></div>
             <div>
                 <label for="chord-duration">Durée (temps):</label>
                 <input type="number" id="chord-duration" value="2" min="1">

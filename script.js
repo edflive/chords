@@ -93,6 +93,14 @@ const saveSongButton = document.getElementById('save-song-btn');
 const savedSongsSelect = document.getElementById('saved-songs-select');
 const loadSongButton = document.getElementById('load-song-btn');
 const deleteSongButton = document.getElementById('delete-song-btn');
+const appStatusElement = document.getElementById('app-status');
+const sequenceCountElement = document.getElementById('sequence-count');
+const sequenceDurationTotalElement = document.getElementById('sequence-duration-total');
+const sequenceHintElement = document.getElementById('sequence-hint');
+
+let currentSuggestions = [];
+let selectedSuggestionIndex = -1;
+let statusTimeoutId = null;
 
 // ==========================================
 // PHASE 2: Chord Data Representation
@@ -157,6 +165,7 @@ async function loadChordDatabase() {
         // Que faire en cas d'erreur? L'appli est peu utilisable... On pourrait désactiver certaines parties.
         chordInputElement.disabled = true;
         chordInputElement.placeholder = "Erreur chargement accords";
+        setStatus("La bibliotheque d'accords n'a pas pu etre chargee.", 'error');
     }
 }
 
@@ -165,6 +174,150 @@ function onDatabaseLoaded() {
     /* console.log("La base de données est prête."); */
     // Si des initialisations dépendent de la base de données, faites-les ici.
     // Par exemple, valider les accords de la chanson chargée depuis localStorage ?
+}
+
+function setStatus(message, type = 'info') {
+    if (!appStatusElement) return;
+
+    appStatusElement.textContent = message;
+    appStatusElement.className = `app-status app-status-${type}`;
+
+    if (statusTimeoutId) {
+        clearTimeout(statusTimeoutId);
+        statusTimeoutId = null;
+    }
+
+    if (type !== 'error') {
+        statusTimeoutId = setTimeout(() => {
+            appStatusElement.textContent = 'Prêt pour construire une progression.';
+            appStatusElement.className = 'app-status app-status-info';
+            statusTimeoutId = null;
+        }, 2600);
+    }
+}
+
+function updateActionStates() {
+    const hasSequence = userSequence.length > 0;
+    const duration = parseInt(durationInputElement.value, 10);
+    const hasValidDuration = Number.isInteger(duration) && duration > 0;
+
+    addChordButton.disabled = !(validatedChordId && proposedVoicing && hasValidDuration);
+    clearSequenceButton.disabled = !hasSequence;
+    playPauseButton.disabled = !hasSequence && !isPlaying;
+    loadSongButton.disabled = !savedSongsSelect.value;
+    deleteSongButton.disabled = !savedSongsSelect.value;
+}
+
+function updateSequenceSummary() {
+    const chordCount = userSequence.length;
+    const totalBeats = userSequence.reduce((sum, item) => sum + item.duration, 0);
+
+    if (sequenceCountElement) {
+        sequenceCountElement.textContent = `${chordCount} accord${chordCount > 1 ? 's' : ''}`;
+    }
+
+    if (sequenceDurationTotalElement) {
+        sequenceDurationTotalElement.textContent = `${totalBeats} temps`;
+    }
+
+    if (!sequenceHintElement) return;
+
+    if (!chordCount) {
+        sequenceHintElement.textContent = 'Ajoute un premier accord pour commencer.';
+    } else if (isPlaying) {
+        sequenceHintElement.textContent = 'Lecture en cours. Clique sur une etape pour te positionner dessus.';
+    } else if (previouslyHighlightedStepIndex >= 0) {
+        sequenceHintElement.textContent = `Etape ${previouslyHighlightedStepIndex + 1} previsualisee. Appuie sur lecture pour repartir de cet accord.`;
+    } else {
+        sequenceHintElement.textContent = 'Clique sur une etape pour la previsualiser, ou utilise le bouton Supprimer pour corriger la progression.';
+    }
+}
+
+function clearSuggestions() {
+    currentSuggestions = [];
+    selectedSuggestionIndex = -1;
+    suggestionsElement.innerHTML = '';
+    suggestionsElement.style.display = 'none';
+}
+
+function applySuggestion(match) {
+    chordInputElement.value = match.name;
+    clearSuggestions();
+    validateAndDisplayChordInput();
+    updateActionStates();
+}
+
+function renderSuggestions(matches) {
+    currentSuggestions = matches.slice(0, 10);
+    selectedSuggestionIndex = currentSuggestions.length > 0 ? 0 : -1;
+    suggestionsElement.innerHTML = '';
+
+    if (currentSuggestions.length === 0) {
+        suggestionsElement.innerHTML = '<small>Aucun accord trouve</small>';
+        suggestionsElement.style.display = 'block';
+        return;
+    }
+
+    currentSuggestions.forEach((match, index) => {
+        const suggestionButton = document.createElement('button');
+        suggestionButton.type = 'button';
+        suggestionButton.textContent = match.name;
+        suggestionButton.className = 'suggestion-item';
+        suggestionButton.setAttribute('role', 'option');
+        suggestionButton.setAttribute('aria-selected', index === selectedSuggestionIndex ? 'true' : 'false');
+        if (index === selectedSuggestionIndex) {
+            suggestionButton.classList.add('is-active');
+        }
+        suggestionButton.addEventListener('click', () => applySuggestion(match));
+        suggestionsElement.appendChild(suggestionButton);
+    });
+
+    suggestionsElement.style.display = 'block';
+}
+
+function updateSuggestionSelection(nextIndex) {
+    if (currentSuggestions.length === 0) return;
+
+    selectedSuggestionIndex = (nextIndex + currentSuggestions.length) % currentSuggestions.length;
+    Array.from(suggestionsElement.children).forEach((child, index) => {
+        const isActive = index === selectedSuggestionIndex;
+        child.classList.toggle('is-active', isActive);
+        child.setAttribute('aria-selected', isActive ? 'true' : 'false');
+    });
+}
+
+function removeSequenceStep(stepIndex) {
+    if (stepIndex < 0 || stepIndex >= userSequence.length) {
+        return;
+    }
+
+    const [removedStep] = userSequence.splice(stepIndex, 1);
+
+    if (previouslyHighlightedStepIndex === stepIndex) {
+        previouslyHighlightedStepIndex = -1;
+    } else if (previouslyHighlightedStepIndex > stepIndex) {
+        previouslyHighlightedStepIndex--;
+    }
+
+    if (currentStepInSequence > stepIndex) {
+        currentStepInSequence--;
+    } else if (currentStepInSequence >= userSequence.length) {
+        currentStepInSequence = 0;
+        currentBeatInChord = 0;
+    }
+
+    if (userSequence.length === 0) {
+        stopPlayback();
+        displayChord(null, null);
+    } else if (stepIndex < userSequence.length) {
+        jumpToSequenceStep(stepIndex);
+    } else {
+        jumpToSequenceStep(userSequence.length - 1);
+    }
+
+    renderSequenceList();
+    saveCurrentSongState();
+    setStatus(`Accord ${removedStep.chordId} supprime de la progression.`, 'warning');
 }
 
 function calculateVoicingPosition(voicing) {
@@ -209,6 +362,12 @@ function calculateTransitionCost(voicing1, voicing2) {
     }
 
     return cost;
+}
+
+function getElapsedBeatsBeforeStep(sequence, stepIndex) {
+    return sequence
+        .slice(0, stepIndex)
+        .reduce((totalBeats, sequenceItem) => totalBeats + sequenceItem.duration, 0);
 }
 
 function findBestNextVoicing(previousVoicing, nextChordId) {
@@ -649,6 +808,8 @@ function displayChord(chordName, voicingObject, pivotIndices = new Set()) {
         altDownButton.disabled = true;
         altUpButton.disabled = true;
     }
+
+    updateActionStates();
 }
 
 // ==========================================
@@ -782,7 +943,7 @@ function startPlayback() {
     } else {
         /* console.log("   startPlayback: Reprise (pas de réinitialisation majeure)."); */
     }
-    beatCountSinceStart = currentStepInSequence * beatsPerMeasure + currentBeatInChord; // Recalcule beatCountSinceStart pour reprise correcte du métronome
+    beatCountSinceStart = getElapsedBeatsBeforeStep(sequenceToPlay, currentStepInSequence) + currentBeatInChord;
 
 
     // Affichage initial / Mise à jour métronome au démarrage/reprise
@@ -854,6 +1015,8 @@ function stopPlayback(resetButtonText = true) {
     } else {
         /* console.log("   stopPlayback: resetButtonText=false, apparence bouton inchangée."); */ // DEBUG
     }
+    updateSequenceSummary();
+    updateActionStates();
     /* console.log(">>> stopPlayback FINIE. isPlaying:", isPlaying, "timerId:", timerId); */
 }
 
@@ -862,22 +1025,52 @@ function stopPlayback(resetButtonText = true) {
 // PHASE 5: User Input & Sequence Management
 // ==========================================
 function renderSequenceList() {
-    // ... (Fonction inchangée - Version CORRIGÉE avec backticks) ...
     sequenceListElement.innerHTML = '';
     if (userSequence.length === 0) {
-        sequenceListElement.innerHTML = '<li>(Séquence vide)</li>';
+        sequenceListElement.innerHTML = '<li class="empty-state">(Chanson vide)</li>';
+        updateSequenceSummary();
+        updateActionStates();
         return;
     }
 
     userSequence.forEach((item, index) => {
         const listItem = document.createElement('li');
-        listItem.textContent = `${index + 1}. ${item.chordId} (${item.duration} temps)`;
-        listItem.dataset.index = index;
+        listItem.classList.add('sequence-step');
         if (index === previouslyHighlightedStepIndex) {
             listItem.classList.add('playing-step');
         }
+
+        const mainButton = document.createElement('button');
+        mainButton.type = 'button';
+        mainButton.className = 'sequence-step-main';
+        mainButton.dataset.index = index;
+        mainButton.setAttribute('aria-label', `Previsualiser l'accord ${item.chordId}`);
+
+        const label = document.createElement('span');
+        label.className = 'sequence-step-label';
+        label.textContent = `${index + 1}. ${item.chordId}`;
+
+        const meta = document.createElement('span');
+        meta.className = 'sequence-step-meta';
+        meta.textContent = `${item.duration} temps`;
+
+        mainButton.appendChild(label);
+        mainButton.appendChild(meta);
+
+        const deleteButton = document.createElement('button');
+        deleteButton.type = 'button';
+        deleteButton.className = 'sequence-step-delete';
+        deleteButton.dataset.deleteIndex = index;
+        deleteButton.setAttribute('aria-label', `Supprimer l'accord ${item.chordId}`);
+        deleteButton.textContent = 'Supprimer';
+
+        listItem.appendChild(mainButton);
+        listItem.appendChild(deleteButton);
         sequenceListElement.appendChild(listItem);
     });
+
+    updateSequenceSummary();
+    updateActionStates();
 }
 
 
@@ -900,12 +1093,7 @@ function jumpToSequenceStep(stepIndex) {
 
     currentStepInSequence = stepIndex;
     currentBeatInChord = 0;
-    beatCountSinceStart = userSequence
-        .slice(0, stepIndex)
-        .reduce(
-            (totalBeats, sequenceItem) => totalBeats + sequenceItem.duration,
-            0
-        );
+    beatCountSinceStart = getElapsedBeatsBeforeStep(userSequence, stepIndex);
 
     const selectedChordInfo = userSequence[stepIndex];
     const chordData = getChordData(selectedChordInfo.chordId);
@@ -985,7 +1173,16 @@ function validateAndDisplayChordInput() {
 
 
 sequenceListElement.addEventListener('click', (event) => {
-    const clickedItem = event.target.closest('li');
+    const deleteButton = event.target.closest('[data-delete-index]');
+    if (deleteButton) {
+        const deleteIndex = parseInt(deleteButton.dataset.deleteIndex, 10);
+        if (!Number.isNaN(deleteIndex)) {
+            removeSequenceStep(deleteIndex);
+        }
+        return;
+    }
+
+    const clickedItem = event.target.closest('[data-index]');
     if (!clickedItem || !sequenceListElement.contains(clickedItem)) {
         return;
     }
@@ -1016,21 +1213,32 @@ timeSignatureSelect.addEventListener('change', () => {
     saveCurrentSongState(); // Sauvegarde le nouvel état
 });
 
+savedSongsSelect.addEventListener('change', () => {
+    updateActionStates();
+});
+
+songNameInput.addEventListener('keydown', (event) => {
+    if (event.key === 'Enter') {
+        event.preventDefault();
+        saveSongButton.click();
+    }
+});
+
 
 // Chord Input Listener
 chordInputElement.addEventListener('input', () => {
     const inputText = chordInputElement.value.trim();
-    suggestionsElement.innerHTML = '';
     validatedChordId = null;
     proposedVoicing = null;
     voicingDownButton.disabled = true;
     voicingUpButton.disabled = true;
     altDownButton.disabled = true;
     altUpButton.disabled = true;
-    suggestionsElement.style.display = 'none';
+    clearSuggestions();
 
     if (inputText.length < 1) {
         displayChord(null, null);
+        updateActionStates();
         return;
     }
 
@@ -1041,19 +1249,7 @@ chordInputElement.addEventListener('input', () => {
     });
 
     if (matches.length > 0) {
-        suggestionsElement.style.display = 'block';
-        matches.slice(0, 10).forEach(match => {
-            const suggestionDiv = document.createElement('div');
-            suggestionDiv.textContent = match.name;
-            suggestionDiv.classList.add('suggestion-item');
-            suggestionDiv.onclick = () => {
-                chordInputElement.value = match.name;
-                suggestionsElement.innerHTML = '';
-                suggestionsElement.style.display = 'none';
-                validateAndDisplayChordInput();
-            };
-            suggestionsElement.appendChild(suggestionDiv);
-        });
+        renderSuggestions(matches);
 
         const exactMatch = matches.find(m =>
             m.name.toLowerCase() === inputText.toLowerCase() ||
@@ -1066,14 +1262,56 @@ chordInputElement.addEventListener('input', () => {
             displayChord(null, null);
         }
     } else {
-        suggestionsElement.innerHTML = '<small>Aucun accord trouvé</small>';
-        suggestionsElement.style.display = 'block';
+        renderSuggestions([]);
         displayChord(null, null);
     }
+
+    updateActionStates();
+});
+
+chordInputElement.addEventListener('keydown', (event) => {
+    if (event.key === 'ArrowDown' && currentSuggestions.length > 0) {
+        event.preventDefault();
+        updateSuggestionSelection(selectedSuggestionIndex + 1);
+        return;
+    }
+
+    if (event.key === 'ArrowUp' && currentSuggestions.length > 0) {
+        event.preventDefault();
+        updateSuggestionSelection(selectedSuggestionIndex - 1);
+        return;
+    }
+
+    if (event.key === 'Escape') {
+        clearSuggestions();
+        updateActionStates();
+        return;
+    }
+
+    if (event.key !== 'Enter') {
+        return;
+    }
+
+    event.preventDefault();
+
+    if (currentSuggestions.length > 0 && selectedSuggestionIndex >= 0) {
+        applySuggestion(currentSuggestions[selectedSuggestionIndex]);
+    }
+
+    const duration = parseInt(durationInputElement.value, 10);
+    if (validatedChordId && proposedVoicing && duration > 0) {
+        addChordButton.click();
+    } else {
+        validateAndDisplayChordInput();
+        updateActionStates();
+    }
+});
+
+durationInputElement.addEventListener('input', () => {
+    updateActionStates();
 });
 // Add Chord Button Listener
 addChordButton.addEventListener('click', () => {
-    // ... (Listener inchangé - Version stockant le proposedVoicing) ...
     const duration = parseInt(durationInputElement.value, 10);
 
     if (validatedChordId && proposedVoicing && duration > 0) {
@@ -1082,34 +1320,34 @@ addChordButton.addEventListener('click', () => {
             duration: duration,
             voicing: proposedVoicing
         });
-        /* console.log("Ajouté à la séquence:", userSequence[userSequence.length - 1]); */
         renderSequenceList();
-        saveCurrentSongState(); // <<< AJOUT: Sauvegarde après ajout
+        saveCurrentSongState();
         chordInputElement.value = '';
         validatedChordId = null;
         proposedVoicing = null;
-        suggestionsElement.innerHTML = '';
-        suggestionsElement.style.display = 'none';
+        clearSuggestions();
         displayChord(null, null);
+        setStatus(`Accord ${userSequence[userSequence.length - 1].chordId} ajoute a la progression.`, 'success');
         chordInputElement.focus();
     } else if (!validatedChordId || !proposedVoicing) {
-        alert("Veuillez saisir ou sélectionner un accord valide (un voicing doit être affiché).");
+        setStatus("Selectionne un accord valide avant de l'ajouter.", 'warning');
         chordInputElement.focus();
     } else {
-        alert("Veuillez saisir une durée valide (nombre de temps > 0).");
+        setStatus("Renseigne une duree valide, superieure a zero.", 'warning');
         durationInputElement.focus();
     }
+
+    updateActionStates();
 });
 
 // Clear Sequence Button Listener
 clearSequenceButton.addEventListener('click', () => {
-    // ... (Listener inchangé - Version réinitialisant highlight) ...
-    if (confirm("Êtes-vous sûr de vouloir la chanson ?")) {
+    if (confirm("Voulez-vous vraiment effacer toute la chanson en cours ?")) {
         stopPlayback();
         userSequence = [];
         renderSequenceList();
-        saveCurrentSongState(); // <<< AJOUT: Sauvegarde après effacement
-        /* console.log("Séquence effacée."); */
+        saveCurrentSongState();
+        setStatus('La progression a ete effacee.', 'warning');
     }
 });
 
@@ -1178,10 +1416,9 @@ playPauseButton.addEventListener('click', () => {
         sequenceToPlay = userSequence;
         /* console.log("   -> Prépare pour lecture. Longueur séquence:", sequenceToPlay.length); */ // DEBUG
         if (sequenceToPlay.length > 0) {
-            /* console.log("   -> Appelle startPlayback()"); */ // DEBUG
             startPlayback();
         } else {
-            alert("La chanson est vide. Ajoutez des accords avant de jouer.");
+            setStatus("Ajoute au moins un accord avant de lancer la lecture.", 'warning');
             console.warn("Tentative de lecture d'une chanson vide.");
         }
     }
@@ -1211,6 +1448,9 @@ document.addEventListener('DOMContentLoaded', async () => { // <<< Ajout de asyn
     voicingUpButton.disabled = true;
     altDownButton.disabled = true;
     altUpButton.disabled = true;
+    updateSequenceSummary();
+    updateActionStates();
+    setStatus("Base d'accords chargee. Tu peux saisir ton prochain accord.", 'success');
 
     /* console.log("Initialisation terminée."); */
 });
@@ -1221,7 +1461,7 @@ document.addEventListener('DOMContentLoaded', async () => { // <<< Ajout de asyn
 saveSongButton.addEventListener('click', () => {
     const songName = songNameInput.value.trim();
     if (!songName) {
-        alert("Veuillez entrer un nom pour la chanson avant de sauvegarder.");
+        setStatus("Donne un nom a la chanson avant de la sauvegarder.", 'warning');
         songNameInput.focus();
         return;
     }
@@ -1250,19 +1490,20 @@ saveSongButton.addEventListener('click', () => {
     // Sauvegarde l'objet complet
     try {
         localStorage.setItem(SAVED_SONGS_KEY, JSON.stringify(savedSongs));
-        /* console.log(`Chanson "${songName}" sauvegardée.`); */
-        alert(`Chanson "${songName}" sauvegardée avec succès !`);
-        populateSavedSongsList(); // Met à jour la liste déroulante
+        populateSavedSongsList();
+        savedSongsSelect.value = songName;
+        updateActionStates();
+        setStatus(`Chanson "${songName}" sauvegardee.`, 'success');
     } catch (error) {
         console.error("Erreur sauvegarde chanson nommée:", error);
-        alert("Erreur lors de la sauvegarde de la chanson.");
+        setStatus("La chanson n'a pas pu etre sauvegardee.", 'error');
     }
 });
 
 loadSongButton.addEventListener('click', () => {
     const selectedSongName = savedSongsSelect.value;
     if (!selectedSongName) {
-        alert("Veuillez sélectionner une chanson à charger.");
+        setStatus("Choisis une chanson a charger.", 'warning');
         return;
     }
 
@@ -1271,27 +1512,26 @@ loadSongButton.addEventListener('click', () => {
         if (storedData) {
             const savedSongs = JSON.parse(storedData);
             if (savedSongs[selectedSongName]) {
-                /* console.log(`Chargement de la chanson "${selectedSongName}"...`); */
-                applyLoadedState(savedSongs[selectedSongName], selectedSongName); // Applique l'état chargé
-                // La chanson chargée devient la chanson courante (et sera auto-sauvegardée)
+                applyLoadedState(savedSongs[selectedSongName], selectedSongName);
                 saveCurrentSongState();
+                setStatus(`Chanson "${selectedSongName}" chargee.`, 'success');
             } else {
-                alert(`Erreur: Chanson "${selectedSongName}" non trouvée dans les données sauvegardées.`);
-                populateSavedSongsList(); // Rafraîchit la liste au cas où
+                setStatus(`La chanson "${selectedSongName}" est introuvable dans les sauvegardes.`, 'error');
+                populateSavedSongsList();
             }
         } else {
-            alert("Aucune chanson sauvegardée n'a été trouvée.");
+            setStatus("Aucune chanson sauvegardee n'a ete trouvee.", 'warning');
         }
     } catch (error) {
         console.error("Erreur chargement chanson nommée:", error);
-        alert("Erreur lors du chargement de la chanson.");
+        setStatus("La chanson n'a pas pu etre chargee.", 'error');
     }
 });
 
 deleteSongButton.addEventListener('click', () => {
     const selectedSongName = savedSongsSelect.value;
     if (!selectedSongName) {
-        alert("Veuillez sélectionner une chanson à supprimer.");
+        setStatus("Choisis une chanson a supprimer.", 'warning');
         return;
     }
 
@@ -1301,24 +1541,20 @@ deleteSongButton.addEventListener('click', () => {
             if (storedData) {
                 let savedSongs = JSON.parse(storedData);
                 if (savedSongs[selectedSongName]) {
-                    delete savedSongs[selectedSongName]; // Supprime l'entrée
-                    localStorage.setItem(SAVED_SONGS_KEY, JSON.stringify(savedSongs)); // Re-sauvegarde l'objet modifié
-                    /* console.log(`Chanson "${selectedSongName}" supprimée.`); */
-                    alert(`Chanson "${selectedSongName}" supprimée.`);
-                    populateSavedSongsList(); // Met à jour la liste déroulante
-                    // Optionnel: Effacer l'espace de travail si la chanson supprimée était chargée?
+                    delete savedSongs[selectedSongName];
+                    localStorage.setItem(SAVED_SONGS_KEY, JSON.stringify(savedSongs));
+                    populateSavedSongsList();
                     if (songNameInput.value === selectedSongName) {
                         songNameInput.value = "";
-                        // applyLoadedState({ tempo: 100, timeSig: "4/4", song: [] }); // Reset workspace
-                        // saveCurrentSongState();
                     }
+                    setStatus(`Chanson "${selectedSongName}" supprimee.`, 'warning');
                 } else {
-                    alert(`Erreur: Chanson "${selectedSongName}" non trouvée.`);
+                    setStatus(`La chanson "${selectedSongName}" est introuvable.`, 'error');
                 }
             }
         } catch (error) {
             console.error("Erreur suppression chanson nommée:", error);
-            alert("Erreur lors de la suppression de la chanson.");
+            setStatus("La chanson n'a pas pu etre supprimee.", 'error');
         }
     }
 });
@@ -1340,60 +1576,6 @@ function saveCurrentSongState() {
     }
 }
 // ACTION: Ajoutez cette NOUVELLE fonction dans script.js
-
-/** Charge le dernier état sauvegardé depuis localStorage au démarrage */
-function loadCurrentSongState() {
-    /* console.log("Tentative de chargement depuis localStorage..."); */
-    try {
-        const savedData = localStorage.getItem(LOCAL_STORAGE_KEY);
-        if (savedData) {
-            const loadedState = JSON.parse(savedData);
-            /* console.log("Données chargées:", loadedState); */
-
-            // Restaure l'état (avec valeurs par défaut si invalide/manquant)
-            tempoBPM = parseInt(loadedState.tempo, 10) || 100;
-            timeSignature = loadedState.timeSig || "4/4";
-            userSequence = Array.isArray(loadedState.song) ? loadedState.song : [];
-
-            // --- Met à jour l'interface utilisateur ---
-            tempoInput.value = tempoBPM;
-            timeSignatureSelect.value = timeSignature;
-            renderSequenceList(); // Affiche la chanson chargée
-
-            // --- Met à jour les variables calculées (SANS SAUVEGARDER) ---
-            _updateTempoInternal(); // Recalcule beatDurationMs etc.
-            _updateTimeSignatureInternal(); // Recalcule beatsPerMeasure etc.
-
-            // Affiche le premier accord si la chanson n'est pas vide
-            if (userSequence.length > 0 && userSequence[0].voicing) {
-                const firstChordData = getChordData(userSequence[0].chordId);
-                // Affiche sans info de pivot initialement
-                displayChord(firstChordData ? firstChordData.name : userSequence[0].chordId, userSequence[0].voicing, new Set());
-            } else {
-                displayChord(null, null); // Efface si vide
-            }
-            /* console.log("Chanson chargée avec succès."); */
-
-        } else {
-            /* console.log("Aucune chanson sauvegardée trouvée, utilise les valeurs par défaut."); */
-            // Assure que l'UI reflète les valeurs par défaut si rien n'est chargé
-            tempoInput.value = tempoBPM;
-            timeSignatureSelect.value = timeSignature;
-            renderSequenceList(); // Affiche "(Séquence vide)" renommé en "(Chanson vide)" si renderSequenceList est à jour
-            displayChord(null, null);
-        }
-    } catch (error) {
-        console.error("Erreur lors du chargement depuis localStorage:", error);
-        // En cas d'erreur (ex: JSON corrompu), on réinitialise
-        userSequence = [];
-        tempoBPM = 100;
-        timeSignature = "4/4";
-        tempoInput.value = tempoBPM;
-        timeSignatureSelect.value = timeSignature;
-        renderSequenceList();
-        displayChord(null, null);
-    }
-}
 
 /** Récupère les chansons sauvegardées et peuple la liste déroulante */
 function populateSavedSongsList() {
@@ -1419,6 +1601,7 @@ function populateSavedSongsList() {
         option.textContent = name;
         savedSongsSelect.appendChild(option);
     });
+    updateActionStates();
     /* console.log("Liste des chansons chargées dans le select:", songNames); */
 }
 
@@ -1437,6 +1620,10 @@ function applyLoadedState(loadedState, songName = "") {
     tempoInput.value = tempoBPM;
     timeSignatureSelect.value = timeSignature;
     songNameInput.value = songName; // Met le nom de la chanson chargée dans l'input
+    chordInputElement.value = "";
+    validatedChordId = null;
+    proposedVoicing = null;
+    clearSuggestions();
     renderSequenceList();
 
     // Met à jour les variables calculées
@@ -1450,6 +1637,8 @@ function applyLoadedState(loadedState, songName = "") {
     } else {
         displayChord(null, null);
     }
+    updateSequenceSummary();
+    updateActionStates();
 }
 
 // ACTION: REMPLACEZ la fonction loadCurrentSongState existante par celle-ci
@@ -1492,6 +1681,7 @@ function initAudio() {
             isAudioEnabled = false;
             audioEnabledCheckbox.checked = false;
             audioEnabledCheckbox.disabled = true;
+            setStatus("Le son n'est pas disponible sur ce navigateur.", 'error');
         }
     }
 }

@@ -11,11 +11,13 @@ body, h1, h2, h3, p, ul, li, div, input, select, button, label {
 
 /* --- Styles Généraux --- */
 body {
-    background-color: #f0f2f5;
+    background:
+        radial-gradient(circle at top left, rgba(255, 209, 102, 0.22), transparent 24%),
+        linear-gradient(180deg, #f8f1e7 0%, #eef2f6 100%);
     color: #333;
     line-height: 1.6;
     padding: 15px;
-    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    font-family: 'Trebuchet MS', 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
 }
 
 /* --- Header --- */
@@ -43,6 +45,28 @@ header h1 {
     border-radius: 10px;
     box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
     margin-bottom: 20px;
+}
+.app-status {
+    padding: 12px 14px;
+    border-radius: 10px;
+    font-size: 0.95rem;
+    font-weight: 600;
+}
+.app-status-info {
+    background: rgba(255, 255, 255, 0.14);
+    color: #fff7db;
+}
+.app-status-success {
+    background: rgba(25, 135, 84, 0.2);
+    color: #d9ffe8;
+}
+.app-status-warning {
+    background: rgba(255, 193, 7, 0.22);
+    color: #fff0bf;
+}
+.app-status-error {
+    background: rgba(220, 53, 69, 0.24);
+    color: #ffe0e4;
 }
 .control-item {
     display: flex;
@@ -138,6 +162,31 @@ header h1 {
     box-shadow: 0 4px 12px rgba(0,0,0,0.08);
     /* width: 100%;  Prend la largeur de sa colonne */
 }
+.section-heading {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 12px;
+    margin-bottom: 10px;
+}
+.section-helper {
+    margin-bottom: 14px;
+    color: #65707f;
+    font-size: 0.92rem;
+}
+.sequence-summary {
+    display: flex;
+    gap: 8px;
+    flex-wrap: wrap;
+}
+.summary-pill {
+    padding: 4px 10px;
+    border-radius: 999px;
+    background: #eef4ff;
+    color: #0d4aa0;
+    font-size: 0.85rem;
+    font-weight: 700;
+}
 
 /* --- Styles spécifiques aux sections --- */
 
@@ -155,23 +204,95 @@ header h1 {
 #chord-diagram svg, #fretboard-visualization svg { max-width: 100%; height: auto; }
 
 /* Colonne Gauche: Liste Chanson */
-.song-list-area h3 { margin-bottom: 15px; color: #444; border-bottom: 1px solid #eee; padding-bottom: 8px; font-size: 1.1em; }
+.song-list-area h3 { color: #444; font-size: 1.1em; }
 .sequence-list-box { list-style: none; padding: 0; max-height: 350px; overflow-y: auto; border: 1px solid #eee; background-color: #fdfdfd; border-radius: 4px; }
 .sequence-list-box li { padding: 8px 12px; border-bottom: 1px solid #f0f0f0; }
 .sequence-list-box li:last-child { border-bottom: none; }
-#sequence-list li.playing-step { background-color: #cfe2ff; font-weight: bold; border-left: 4px solid #0d6efd; padding-left: 8px; }
+#sequence-list li.playing-step { background-color: #cfe2ff; border-left: 4px solid #0d6efd; padding-left: 8px; }
+#sequence-list .sequence-step {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px;
+}
+.sequence-step-main {
+    flex: 1;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    padding: 0;
+    border: none;
+    background: transparent;
+    text-align: left;
+    cursor: pointer;
+    color: inherit;
+}
+.sequence-step-main:hover,
+.sequence-step-main:focus-visible {
+    color: #0d4aa0;
+    outline: none;
+}
+.sequence-step-label {
+    font-weight: 700;
+}
+.sequence-step-meta {
+    color: #6c757d;
+    font-size: 0.88rem;
+    white-space: nowrap;
+}
+.sequence-step-delete {
+    padding: 5px 10px;
+    border: 1px solid #f1c8cf;
+    background: #fff4f5;
+    color: #bb2d3b;
+    border-radius: 999px;
+    cursor: pointer;
+    font-size: 0.82rem;
+    font-weight: 700;
+}
+.sequence-step-delete:hover,
+.sequence-step-delete:focus-visible {
+    background: #ffe6ea;
+    outline: none;
+}
+.empty-state {
+    color: #7a8088;
+    text-align: center;
+    font-style: italic;
+}
 #clear-sequence-btn { margin-top: 15px; width: auto; display: inline-block; padding: 8px 20px; cursor: pointer; border-radius: 4px; color: white; background-color: #6c757d; border: none;}
 #clear-sequence-btn:hover { background-color: #5a6268; }
+#clear-sequence-btn:disabled,
+.input-actions button:disabled,
+#save-song-btn:disabled, #load-song-btn:disabled, #delete-song-btn:disabled {
+    opacity: 0.55;
+    cursor: not-allowed;
+}
 
 
 /* Colonne Droite: Ajout Accord */
 .sequence-input h3 { margin-bottom: 15px; color: #444; border-bottom: 1px solid #eee; padding-bottom: 8px; font-size: 1.1em; }
 .sequence-input div { margin-bottom: 12px; }
 .sequence-input label { display: block; margin-bottom: 5px; font-size: 0.9em; color: #555; }
-.sequence-input input[type="text"], .sequence-input input[type="number"] { width: 100%; padding: 8px; border: 1px solid #ccc; border-radius: 4px; }
-.suggestions { border: 1px dashed #ccc; background-color: #f9f9f9; padding: 10px; min-height: 40px; color: #aaa; border-radius: 4px; margin-top: 5px; font-size: 0.9em; }
-.suggestion-item { cursor: pointer; padding: 3px 5px; color: #333; }
-.suggestion-item:hover { background-color: #e9ecef; }
+.sequence-input input[type="text"], .sequence-input input[type="number"] { width: 100%; padding: 10px 12px; border: 1px solid #ccc; border-radius: 8px; }
+.suggestions { border: 1px dashed #ccc; background-color: #f9f9f9; padding: 10px; min-height: 40px; color: #aaa; border-radius: 8px; margin-top: 5px; font-size: 0.9em; }
+.suggestion-item {
+    width: 100%;
+    text-align: left;
+    cursor: pointer;
+    padding: 8px 10px;
+    color: #333;
+    border: none;
+    background: transparent;
+    border-radius: 6px;
+}
+.suggestion-item:hover,
+.suggestion-item:focus-visible,
+.suggestion-item.is-active {
+    background-color: #e9ecef;
+    outline: none;
+}
 .input-actions { display: flex; gap: 10px; margin-top: 15px; }
 /* Le bouton Prévisualiser n'existe plus */
 .input-actions button { flex-grow: 1; padding: 10px; font-size: 0.95em; cursor: pointer; border-radius: 4px; border: 1px solid transparent;}
@@ -215,6 +336,9 @@ footer { text-align: center; margin-top: 30px; padding-top: 15px; border-top: 1p
      .chord-display-area h2.chord-title { text-align: center; margin-bottom: 10px; }
      .voicing-controls { text-align: center; margin-bottom: 15px; }
      .chord-diagram-view, .fretboard-view { max-width: 95%; } /* Prend quasi toute largeur mobile */
+     .section-heading { flex-direction: column; align-items: flex-start; }
+     .sequence-step-main { flex-direction: column; align-items: flex-start; }
+     .sequence-step-meta { white-space: normal; }
 
      /* Assure que les boutons save/load/delete peuvent passer à la ligne */
     .song-management-sub-area .song-name-section,

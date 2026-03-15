@@ -6,6 +6,7 @@ const FILES_TO_CACHE = [
   './index.html',
   './style.css',
   './script.js',
+  './manifest.json',
   './chords.json', // Très important de mettre le JSON en cache !
   './icon-192.png', // Mettez en cache les icônes aussi
   './icon-512.png',
@@ -50,6 +51,7 @@ self.addEventListener('activate', (event) => {
 // Événement fetch : Interception des requêtes réseau
 self.addEventListener('fetch', (event) => {
   // console.log('[ServiceWorker] Fetch', event.request.url);
+  const requestUrl = new URL(event.request.url);
 
   // Stratégie "Cache First" pour les requêtes GET
   if (event.request.method === 'GET') {
@@ -71,8 +73,18 @@ self.addEventListener('fetch', (event) => {
             })
             .catch(error => {
                 console.error("[ServiceWorker] Erreur Fetch réseau:", error);
-                // Optionnel: Retourner une page "hors ligne" générique si le fetch échoue
-                // return caches.match('./offline.html');
+                if (event.request.mode === 'navigate') {
+                  return caches.match('./index.html');
+                }
+
+                if (requestUrl.pathname.endsWith('/manifest.json')) {
+                  return caches.match('./manifest.json');
+                }
+
+                return new Response('', {
+                  status: 503,
+                  statusText: 'Offline'
+                });
             });
         })
     );
