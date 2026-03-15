@@ -88,6 +88,9 @@ header h1 {
     background-color: #f9f9f9;
     transition: border-color 0.2s ease;
 }
+.voicing-level-control select {
+    min-width: 132px;
+}
 
 .control-item input[type="number"]:focus,
 .control-item select:focus {

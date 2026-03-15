@@ -6,6 +6,8 @@
 const LOCAL_STORAGE_KEY = 'currentGuitarSong'; // Clé pour localStorage
 const SAVED_SONGS_KEY = 'guitarAppSavedSongs'; // Clé pour les chansons nommées
 const CHORD_DATABASE_CACHE_KEY = 'guitarChordDatabaseCache'; // Cache local pour usage hors-ligne
+const DEFAULT_VOICING_LEVEL = 'standard';
+const VOICING_LEVELS = { beginner: 0, standard: 1, advanced: 2 };
 const noteFrequencies = {
     // Fréquences en Hz pour quelques octaves (simplifié)
     // On suppose une notation anglaise (C, C#, D...)
@@ -35,6 +37,7 @@ let previousVoicingInPlayback = null;
 let userSequence = []; // Holds the actual sequence created by the user
 let validatedChordId = null;
 let proposedVoicing = null;
+let currentVoicingLevel = DEFAULT_VOICING_LEVEL;
 
 let audioCtx = null; // Le contexte audio global
 let isAudioEnabled = false; // Pour l'interrupteur Audio On/Off
@@ -69,6 +72,7 @@ const FRETBOARD_NUT_WIDTH = 8;
 // --- UI Element References ---
 const tempoInput = document.getElementById('tempo');
 const timeSignatureSelect = document.getElementById('time-signature');
+const voicingLevelSelect = document.getElementById('voicing-level');
 const playPauseButton = document.getElementById('sequence-play-pause-btn');
 const chordInputElement = document.getElementById('chord-input');
 const suggestionsElement = document.getElementById('chord-suggestions');
@@ -83,6 +87,8 @@ const altUpButton = document.getElementById('alt-up-btn');
 const diagramContainer = document.getElementById('chord-diagram');
 const fretboardContainer = document.getElementById('fretboard-visualization');
 const chordNameElement = document.getElementById('displayed-chord-name');
+const chordDisplayAreaElement = document.querySelector('.chord-display-area');
+const songListAreaElement = document.querySelector('.song-list-area');
 // ACTION: Ajoutez cette ligne avec les autres références UI (getElementById)
 const audioEnabledCheckbox = document.getElementById('audio-enabled');
 // ACTION: Ajoutez cette ligne avec les autres références UI (getElementById)
@@ -125,9 +131,21 @@ function getChordData(chordIdentifier) {
     return foundChord || null;
 }
 
-function getVoicingsForChord(chordIdentifier) {
+function getVoicingLevel(voicing) {
+    const level = voicing?.level || 'standard';
+    return Object.prototype.hasOwnProperty.call(VOICING_LEVELS, level) ? level : 'standard';
+}
+
+function isVoicingAllowed(voicing, maxLevel = currentVoicingLevel) {
+    return VOICING_LEVELS[getVoicingLevel(voicing)] <= VOICING_LEVELS[maxLevel];
+}
+
+function getVoicingsForChord(chordIdentifier, options = {}) {
+    const { maxLevel = currentVoicingLevel, includeAll = false } = options;
     const chordData = getChordData(chordIdentifier);
-    return chordData ? chordData.voicings : [];
+    if (!chordData) return [];
+    if (includeAll) return chordData.voicings || [];
+    return (chordData.voicings || []).filter(voicing => isVoicingAllowed(voicing, maxLevel));
 }
 
 /** Charge la base de données d'accords depuis le fichier chords.json */
@@ -206,6 +224,31 @@ function updateActionStates() {
     playPauseButton.disabled = !hasSequence && !isPlaying;
     loadSongButton.disabled = !savedSongsSelect.value;
     deleteSongButton.disabled = !savedSongsSelect.value;
+}
+
+function applyVoicingLevel(level, announce = false) {
+    currentVoicingLevel = Object.prototype.hasOwnProperty.call(VOICING_LEVELS, level)
+        ? level
+        : DEFAULT_VOICING_LEVEL;
+
+    if (voicingLevelSelect) {
+        voicingLevelSelect.value = currentVoicingLevel;
+    }
+
+    if (validatedChordId) {
+        validateAndDisplayChordInput();
+    } else {
+        updateActionStates();
+    }
+
+    if (announce) {
+        const label = currentVoicingLevel === 'beginner'
+            ? 'Debutant'
+            : currentVoicingLevel === 'advanced'
+                ? 'Avance'
+                : 'Standard';
+        setStatus(`Filtre de voicings regle sur ${label}.`, 'success');
+    }
 }
 
 function updateSequenceSummary() {
@@ -370,8 +413,23 @@ function getElapsedBeatsBeforeStep(sequence, stepIndex) {
         .reduce((totalBeats, sequenceItem) => totalBeats + sequenceItem.duration, 0);
 }
 
+function getPlayableVoicingWeight(voicing) {
+    const levelPenalty = getVoicingLevel(voicing) === 'beginner'
+        ? -6
+        : getVoicingLevel(voicing) === 'advanced'
+            ? 8
+            : 0;
+
+    const frettedNotes = voicing.frets.filter(fret => fret > 0);
+    const mutedStrings = voicing.frets.filter(fret => fret === -1).length;
+    const fretSpan = frettedNotes.length > 0
+        ? Math.max(...frettedNotes) - Math.min(...frettedNotes)
+        : 0;
+
+    return levelPenalty + fretSpan + (voicing.frets.filter(fret => fret > 0).length * 0.4) - (mutedStrings * 0.3);
+}
+
 function findBestNextVoicing(previousVoicing, nextChordId) {
-    // ... (Fonction inchangée) ...
     const candidateVoicings = getVoicingsForChord(nextChordId);
     if (!candidateVoicings || candidateVoicings.length === 0) {
         return null;
@@ -382,7 +440,9 @@ function findBestNextVoicing(previousVoicing, nextChordId) {
     let bestVoicing = null;
     let minCost = Infinity;
     candidateVoicings.forEach(candidate => {
-        const cost = calculateTransitionCost(previousVoicing, candidate);
+        const transitionCost = calculateTransitionCost(previousVoicing, candidate);
+        const playabilityCost = getPlayableVoicingWeight(candidate);
+        const cost = (transitionCost * 10) + playabilityCost;
         if (cost < minCost) {
             minCost = cost;
             bestVoicing = candidate;
@@ -399,7 +459,10 @@ function findAlternate(currentVoicing, currentChordId, direction) {
     if (!allVoicings || allVoicings.length <= 1) return null;
 
     // Trouve l'index du voicing courant dans la liste en comparant les tableaux de frettes
-    const currentIndex = allVoicings.findIndex(v => v.positionName === currentVoicing.positionName);
+    let currentIndex = allVoicings.findIndex(v => v.positionName === currentVoicing.positionName);
+    if (currentIndex === -1) {
+        currentIndex = 0;
+    }
     if (currentIndex === -1) return null;
 
     let targetIndex;
@@ -970,6 +1033,34 @@ function startPlayback() {
     /* console.log(">>> startPlayback: Lecture DEMARREE/REPRISE. Timer ID:", timerId); */
 }
 
+function pausePlayback(announce = true) {
+    if (timerId === null) {
+        return;
+    }
+
+    clearInterval(timerId);
+    timerId = null;
+    isPlaying = false;
+
+    if (metroIndicator) {
+        metroIndicator.classList.remove('strong-beat', 'weak-beat');
+        metroIndicator.textContent = '';
+    }
+
+    playPauseButton.textContent = '▶️ Reprendre la chanson';
+    playPauseButton.classList.remove('playing');
+
+    updateSequenceSummary();
+    updateActionStates();
+
+    if (announce) {
+        const currentStepLabel = previouslyHighlightedStepIndex >= 0
+            ? ` a l'accord ${previouslyHighlightedStepIndex + 1}`
+            : '';
+        setStatus(`Lecture mise en pause${currentStepLabel}.`, 'warning');
+    }
+}
+
 function stopPlayback(resetButtonText = true) {
     /* console.log(">>> stopPlayback APPELÉE. timerId:", timerId, "resetButtonText:", resetButtonText); */ // DEBUG
     if (timerId === null) {
@@ -1123,10 +1214,23 @@ function pauseOnSequenceStep(stepIndex) {
     }
 
     if (isPlaying) {
-        stopPlayback();
+        pausePlayback(false);
     }
 
     jumpToSequenceStep(stepIndex);
+    setStatus(`Lecture positionnee sur l'accord ${stepIndex + 1}.`, 'warning');
+}
+
+function handlePlaybackSurfaceClick() {
+    if (!isPlaying || userSequence.length === 0) {
+        return;
+    }
+
+    if (previouslyHighlightedStepIndex < 0) {
+        previouslyHighlightedStepIndex = currentStepInSequence;
+    }
+
+    pausePlayback();
 }
 
 
@@ -1158,6 +1262,7 @@ function validateAndDisplayChordInput() {
             displayChord(chordData.name, null); // Affiche le nom mais pas de diagramme
             validatedChordId = null; // Invalide si pas de voicing
             proposedVoicing = null;
+            setStatus(`Aucun voicing ${currentVoicingLevel} disponible pour ${chordData.name}.`, 'warning');
         }
 
     } else {
@@ -1192,7 +1297,38 @@ sequenceListElement.addEventListener('click', (event) => {
         return;
     }
 
-    pauseOnSequenceStep(index);
+    if (isPlaying) {
+        pauseOnSequenceStep(index);
+        return;
+    }
+
+    jumpToSequenceStep(index);
+    startPlayback();
+    setStatus(`Lecture relancee depuis l'accord ${index + 1}.`, 'success');
+});
+
+songListAreaElement?.addEventListener('click', (event) => {
+    if (event.target.closest('[data-index]') || event.target.closest('[data-delete-index]')) {
+        return;
+    }
+
+    handlePlaybackSurfaceClick();
+});
+
+chordDisplayAreaElement?.addEventListener('click', (event) => {
+    if (event.target.closest('button')) {
+        return;
+    }
+
+    handlePlaybackSurfaceClick();
+});
+
+diagramContainer.addEventListener('click', () => {
+    handlePlaybackSurfaceClick();
+});
+
+fretboardContainer.addEventListener('click', () => {
+    handlePlaybackSurfaceClick();
 });
 
 
@@ -1211,6 +1347,11 @@ timeSignatureSelect.addEventListener('change', () => {
     _updateTimeSignatureInternal(); // Met à jour les variables internes
     // Pas besoin de redémarrer la lecture ici, playTick utilisera la nouvelle valeur de beatsPerMeasure
     saveCurrentSongState(); // Sauvegarde le nouvel état
+});
+
+voicingLevelSelect.addEventListener('change', () => {
+    applyVoicingLevel(voicingLevelSelect.value, true);
+    saveCurrentSongState();
 });
 
 savedSongsSelect.addEventListener('change', () => {
@@ -1481,6 +1622,7 @@ saveSongButton.addEventListener('click', () => {
     const currentSongState = {
         tempo: tempoBPM,
         timeSig: timeSignature,
+        voicingLevel: currentVoicingLevel,
         song: userSequence
     };
 
@@ -1564,6 +1706,7 @@ function saveCurrentSongState() {
     const state = {
         tempo: tempoBPM,
         timeSig: timeSignature,
+        voicingLevel: currentVoicingLevel,
         song: userSequence // Utilise la séquence utilisateur actuelle
     };
     try {
@@ -1614,11 +1757,13 @@ function applyLoadedState(loadedState, songName = "") {
 
     tempoBPM = parseInt(loadedState.tempo, 10) || 100;
     timeSignature = loadedState.timeSig || "4/4";
+    currentVoicingLevel = loadedState.voicingLevel || DEFAULT_VOICING_LEVEL;
     userSequence = Array.isArray(loadedState.song) ? loadedState.song : [];
 
     // Met à jour l'UI
     tempoInput.value = tempoBPM;
     timeSignatureSelect.value = timeSignature;
+    voicingLevelSelect.value = currentVoicingLevel;
     songNameInput.value = songName; // Met le nom de la chanson chargée dans l'input
     chordInputElement.value = "";
     validatedChordId = null;
@@ -1661,7 +1806,7 @@ function loadCurrentSongState() {
     if (!loadedSuccessfully) {
         /* console.log("Aucune session précédente trouvée ou erreur, utilise les valeurs par défaut."); */
         // Assure que l'UI et l'état sont par défaut si le chargement échoue
-        applyLoadedState({ tempo: 100, timeSig: "4/4", song: [] });
+        applyLoadedState({ tempo: 100, timeSig: "4/4", voicingLevel: DEFAULT_VOICING_LEVEL, song: [] });
     }
 
     // Peuple aussi la liste des chansons sauvegardées (celles nommées)
