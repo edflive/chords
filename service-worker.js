@@ -1,11 +1,12 @@
 // service-worker.js
 
-const CACHE_NAME = 'gratte-app-cache-v1.01'; // Versionnez votre cache !
+const CACHE_NAME = 'gratte-app-cache-v1.02'; // Versionnez votre cache !
 const FILES_TO_CACHE = [
   './', // Important pour la racine et potentiellement start_url '.'
   './index.html',
   './style.css',
   './script.js',
+  './app-icon.svg',
   './manifest.json',
   './chords.json', // Très important de mettre le JSON en cache !
   './icon-192.png', // Mettez en cache les icônes aussi

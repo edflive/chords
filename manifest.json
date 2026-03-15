@@ -3,11 +3,22 @@
   "short_name": "chords",
   "description": "Application d'aide pour guitaristes avec séquences d'accords et optimisation des doigtés.",
   "start_url": "./index.html",
+  "scope": "./",
   "display": "standalone",
+  "display_override": [
+    "fullscreen",
+    "standalone"
+  ],
   "background_color": "#ffffff",
   "theme_color": "#333333",
   "orientation": "any",
   "icons": [
+    {
+      "src": "./app-icon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    },
     {
       "src": "./icon-192.png",
       "sizes": "192x192",
