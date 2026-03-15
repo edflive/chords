@@ -283,6 +283,12 @@ function clearSuggestions() {
     suggestionsElement.style.display = 'none';
 }
 
+function getSequenceStepListItem(stepIndex) {
+    return sequenceListElement
+        .querySelector(`[data-index="${stepIndex}"]`)
+        ?.closest('li') || null;
+}
+
 function applySuggestion(match) {
     chordInputElement.value = match.name;
     clearSuggestions();
@@ -956,12 +962,12 @@ function playTick() {
         displayChord(chordData ? chordData.name : currentChordInfo.chordId, currentVoicing, pivotIndices);
 
         if (previouslyHighlightedStepIndex >= 0) {
-            const previousLi = sequenceListElement.querySelector(`li[data-index="${previouslyHighlightedStepIndex}"]`);
+            const previousLi = getSequenceStepListItem(previouslyHighlightedStepIndex);
             if (previousLi) {
                 previousLi.classList.remove('playing-step');
             }
         }
-        const currentLi = sequenceListElement.querySelector(`li[data-index="${currentStepInSequence}"]`);
+        const currentLi = getSequenceStepListItem(currentStepInSequence);
         if (currentLi) { currentLi.classList.add('playing-step'); }
         previouslyHighlightedStepIndex = currentStepInSequence;
     }
@@ -1019,7 +1025,7 @@ function startPlayback() {
         // Highlight (attention si on reprend au milieu d'un accord)
         if (previouslyHighlightedStepIndex !== currentStepInSequence) {
             if (previouslyHighlightedStepIndex >= 0) { /* remove old highlight */ }
-            const currentLi = sequenceListElement.querySelector(`li[data-index="${currentStepInSequence}"]`);
+            const currentLi = getSequenceStepListItem(currentStepInSequence);
             if (currentLi) { currentLi.classList.add('playing-step'); }
             previouslyHighlightedStepIndex = currentStepInSequence;
         }
@@ -1087,7 +1093,7 @@ function stopPlayback(resetButtonText = true) {
 
     // Nettoie le highlight de la liste (seulement si on arrête vraiment, pas juste pour changer tempo)
     if (resetButtonText && previouslyHighlightedStepIndex >= 0) {
-        const previousLi = sequenceListElement.querySelector(`li[data-index="${previouslyHighlightedStepIndex}"]`);
+        const previousLi = getSequenceStepListItem(previouslyHighlightedStepIndex);
         if (previousLi) {
             previousLi.classList.remove('playing-step');
             /* console.log("   stopPlayback: Highlight retiré de l'étape", previouslyHighlightedStepIndex); */ // DEBUG
@@ -1175,7 +1181,7 @@ function jumpToSequenceStep(stepIndex) {
     if (isPlaying) {
         stopPlayback();
     } else if (previouslyHighlightedStepIndex >= 0) {
-        const previousLi = sequenceListElement.querySelector(`li[data-index="${previouslyHighlightedStepIndex}"]`);
+        const previousLi = getSequenceStepListItem(previouslyHighlightedStepIndex);
         if (previousLi) {
             previousLi.classList.remove('playing-step');
         }
@@ -1201,7 +1207,7 @@ function jumpToSequenceStep(stepIndex) {
     proposedVoicing = selectedChordInfo.voicing;
     previousVoicingInPlayback = selectedChordInfo.voicing;
 
-    const currentLi = sequenceListElement.querySelector(`li[data-index="${stepIndex}"]`);
+    const currentLi = getSequenceStepListItem(stepIndex);
     if (currentLi) {
         currentLi.classList.add('playing-step');
     }
@@ -1231,6 +1237,23 @@ function handlePlaybackSurfaceClick() {
     }
 
     pausePlayback();
+}
+
+function bindPauseSurface(element, shouldIgnoreEvent = null) {
+    if (!element) {
+        return;
+    }
+
+    const handler = (event) => {
+        if (typeof shouldIgnoreEvent === 'function' && shouldIgnoreEvent(event)) {
+            return;
+        }
+
+        handlePlaybackSurfaceClick();
+    };
+
+    element.addEventListener('click', handler);
+    element.addEventListener('pointerup', handler);
 }
 
 
@@ -1307,29 +1330,13 @@ sequenceListElement.addEventListener('click', (event) => {
     setStatus(`Lecture relancee depuis l'accord ${index + 1}.`, 'success');
 });
 
-songListAreaElement?.addEventListener('click', (event) => {
-    if (event.target.closest('[data-index]') || event.target.closest('[data-delete-index]')) {
-        return;
-    }
+bindPauseSurface(songListAreaElement, (event) =>
+    Boolean(event.target.closest('[data-index]') || event.target.closest('[data-delete-index]'))
+);
 
-    handlePlaybackSurfaceClick();
-});
-
-chordDisplayAreaElement?.addEventListener('click', (event) => {
-    if (event.target.closest('button')) {
-        return;
-    }
-
-    handlePlaybackSurfaceClick();
-});
-
-diagramContainer.addEventListener('click', () => {
-    handlePlaybackSurfaceClick();
-});
-
-fretboardContainer.addEventListener('click', () => {
-    handlePlaybackSurfaceClick();
-});
+bindPauseSurface(chordDisplayAreaElement, (event) => Boolean(event.target.closest('button')));
+bindPauseSurface(diagramContainer);
+bindPauseSurface(fretboardContainer);
 
 
 // Update tempo/time signature when changed by user AND save
