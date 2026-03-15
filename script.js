@@ -5,6 +5,7 @@
 // --- State Variables & Constants ---
 const LOCAL_STORAGE_KEY = 'currentGuitarSong'; // Clé pour localStorage
 const SAVED_SONGS_KEY = 'guitarAppSavedSongs'; // Clé pour les chansons nommées
+const CHORD_DATABASE_CACHE_KEY = 'guitarChordDatabaseCache'; // Cache local pour usage hors-ligne
 const noteFrequencies = {
     // Fréquences en Hz pour quelques octaves (simplifié)
     // On suppose une notation anglaise (C, C#, D...)
@@ -133,10 +134,25 @@ async function loadChordDatabase() {
         }
         const data = await response.json(); // Parse le contenu JSON
         chordDatabase = data; // Assigne les données chargées à la variable globale
+        localStorage.setItem(CHORD_DATABASE_CACHE_KEY, JSON.stringify(data));
         /* console.log(`Base d'accords chargée avec succès (${chordDatabase.length} accords trouvés).`); */
         onDatabaseLoaded(); // Appelle une fonction pour signaler que c'est prêt (si besoin)
     } catch (error) {
         console.error(`Impossible de charger ou parser ${filePath}:`, error);
+
+        const cachedDatabase = localStorage.getItem(CHORD_DATABASE_CACHE_KEY);
+        if (cachedDatabase) {
+            try {
+                chordDatabase = JSON.parse(cachedDatabase);
+                console.warn('Base d\'accords chargée depuis le cache local (mode hors-ligne).');
+                onDatabaseLoaded();
+                return;
+            } catch (cacheError) {
+                console.error('Cache local de la base d\'accords invalide :', cacheError);
+                localStorage.removeItem(CHORD_DATABASE_CACHE_KEY);
+            }
+        }
+
         alert(`Erreur critique : Impossible de charger la bibliothèque d'accords.\nAssurez-vous que le fichier '${filePath}' existe dans le même dossier et que son format JSON est correct.`);
         // Que faire en cas d'erreur? L'appli est peu utilisable... On pourrait désactiver certaines parties.
         chordInputElement.disabled = true;
@@ -857,8 +873,72 @@ function renderSequenceList() {
         const listItem = document.createElement('li');
         listItem.textContent = `${index + 1}. ${item.chordId} (${item.duration} temps)`;
         listItem.dataset.index = index;
+        if (index === previouslyHighlightedStepIndex) {
+            listItem.classList.add('playing-step');
+        }
         sequenceListElement.appendChild(listItem);
     });
+}
+
+
+function jumpToSequenceStep(stepIndex) {
+    if (stepIndex < 0 || stepIndex >= userSequence.length) {
+        return;
+    }
+
+    sequenceToPlay = userSequence;
+
+    if (isPlaying) {
+        stopPlayback();
+    } else if (previouslyHighlightedStepIndex >= 0) {
+        const previousLi = sequenceListElement.querySelector(`li[data-index="${previouslyHighlightedStepIndex}"]`);
+        if (previousLi) {
+            previousLi.classList.remove('playing-step');
+        }
+        previouslyHighlightedStepIndex = -1;
+    }
+
+    currentStepInSequence = stepIndex;
+    currentBeatInChord = 0;
+    beatCountSinceStart = userSequence
+        .slice(0, stepIndex)
+        .reduce(
+            (totalBeats, sequenceItem) => totalBeats + sequenceItem.duration,
+            0
+        );
+
+    const selectedChordInfo = userSequence[stepIndex];
+    const chordData = getChordData(selectedChordInfo.chordId);
+    const previousVoicing = stepIndex > 0 ? userSequence[stepIndex - 1].voicing : null;
+    const pivotIndices = identifyPivotFingers(previousVoicing, selectedChordInfo.voicing);
+
+    displayChord(
+        chordData ? chordData.name : selectedChordInfo.chordId,
+        selectedChordInfo.voicing,
+        pivotIndices
+    );
+
+    validatedChordId = selectedChordInfo.chordId;
+    proposedVoicing = selectedChordInfo.voicing;
+    previousVoicingInPlayback = selectedChordInfo.voicing;
+
+    const currentLi = sequenceListElement.querySelector(`li[data-index="${stepIndex}"]`);
+    if (currentLi) {
+        currentLi.classList.add('playing-step');
+    }
+    previouslyHighlightedStepIndex = stepIndex;
+}
+
+function pauseOnSequenceStep(stepIndex) {
+    if (stepIndex < 0 || stepIndex >= userSequence.length) {
+        return;
+    }
+
+    if (isPlaying) {
+        stopPlayback();
+    }
+
+    jumpToSequenceStep(stepIndex);
 }
 
 
@@ -902,6 +982,21 @@ function validateAndDisplayChordInput() {
 // ==========================================
 // Event Listeners & Initialization
 // ==========================================
+
+
+sequenceListElement.addEventListener('click', (event) => {
+    const clickedItem = event.target.closest('li');
+    if (!clickedItem || !sequenceListElement.contains(clickedItem)) {
+        return;
+    }
+
+    const index = parseInt(clickedItem.dataset.index, 10);
+    if (Number.isNaN(index)) {
+        return;
+    }
+
+    pauseOnSequenceStep(index);
+});
 
 
 // Update tempo/time signature when changed by user AND save

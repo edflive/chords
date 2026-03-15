@@ -1,0 +1,314 @@
+diff --git a/script.js b/script.js
+index 59bb497dbf33c16452d78adf7067726b44448d07..2adc1a37d70022b40925665df5b77c816cbc09fb 100644
+--- a/script.js
++++ b/script.js
+@@ -1,32 +1,33 @@
+ // ==========================================
+ // Guitar Chord Helper - script.js - COMPLET
+ // ==========================================
+ 
+ // --- State Variables & Constants ---
+ const LOCAL_STORAGE_KEY = 'currentGuitarSong'; // Clé pour localStorage
+ const SAVED_SONGS_KEY = 'guitarAppSavedSongs'; // Clé pour les chansons nommées
++const CHORD_DATABASE_CACHE_KEY = 'guitarChordDatabaseCache'; // Cache local pour usage hors-ligne
+ const noteFrequencies = {
+     // Fréquences en Hz pour quelques octaves (simplifié)
+     // On suppose une notation anglaise (C, C#, D...)
+     // Idéalement, il faudrait une fonction plus robuste calculant depuis A4=440Hz
+     'C3': 130.81, 'C#3': 138.59, 'D3': 146.83, 'D#3': 155.56, 'E3': 164.81, 'F3': 174.61, 'F#3': 185.00, 'G3': 196.00, 'G#3': 207.65, 'A3': 220.00, 'A#3': 233.08, 'B3': 246.94,
+     'C4': 261.63, 'C#4': 277.18, 'D4': 293.66, 'D#4': 311.13, 'E4': 329.63, 'F4': 349.23, 'F#4': 369.99, 'G4': 392.00, 'G#4': 415.30, 'A4': 440.00, 'A#4': 466.16, 'B4': 493.88,
+     'C5': 523.25, 'C#5': 554.37, 'D5': 587.33, 'D#5': 622.25, 'E5': 659.25, 'F5': 698.46, 'F#5': 739.99, 'G5': 783.99, 'G#5': 830.61, 'A5': 880.00, 'A#5': 932.33, 'B5': 987.77,
+     // Alias (pour simplifier la recherche si on n'a que la lettre)
+     'C': 261.63, 'C#': 277.18, 'D': 293.66, 'D#': 311.13, 'E': 329.63, 'F': 349.23, 'F#': 369.99, 'G': 392.00, 'G#': 415.30, 'A': 440.00, 'A#': 466.16, 'B': 493.88
+ };
+ 
+ // Playback State
+ let chordDatabase = []; // Sera peuplé depuis chords.json
+ let isPlaying = false;
+ let tempoBPM = 100;
+ let timeSignature = "4/4";
+ let beatsPerMeasure = 4;
+ let beatDurationMs = 600;
+ let timerId = null;
+ let sequenceToPlay = []; // Pointer to the sequence being played (usually userSequence)
+ let currentStepInSequence = 0;
+ let currentBeatInChord = 0;
+ let previouslyHighlightedStepIndex = -1;
+ let previousVoicingInPlayback = null;
+ 
+@@ -111,54 +112,69 @@ function getChordData(chordIdentifier) {
+         chord.name.toLowerCase() === identifierLower ||
+         (chord.aliases && chord.aliases.some(alias => alias.toLowerCase() === identifierLower))
+     );
+     // Log le résultat trouvé (ou null) en affichant le nom pour clarté
+     /* console.log(`--- getChordData: Trouvé -> ${foundChord ? foundChord.name : 'null'}`); */
+     return foundChord || null;
+ }
+ 
+ function getVoicingsForChord(chordIdentifier) {
+     const chordData = getChordData(chordIdentifier);
+     return chordData ? chordData.voicings : [];
+ }
+ 
+ /** Charge la base de données d'accords depuis le fichier chords.json */
+ async function loadChordDatabase() {
+     const filePath = 'chords.json'; // Nom du fichier JSON local
+     /* console.log(`Chargement de la base d'accords depuis ${filePath}...`); */
+     try {
+         const response = await fetch(filePath); // Utilise fetch pour lire le fichier local
+         if (!response.ok) {
+             // Si le fichier n'est pas trouvé (404) ou autre erreur HTTP
+             throw new Error(`Erreur HTTP! Statut: ${response.status}`);
+         }
+         const data = await response.json(); // Parse le contenu JSON
+         chordDatabase = data; // Assigne les données chargées à la variable globale
++        localStorage.setItem(CHORD_DATABASE_CACHE_KEY, JSON.stringify(data));
+         /* console.log(`Base d'accords chargée avec succès (${chordDatabase.length} accords trouvés).`); */
+         onDatabaseLoaded(); // Appelle une fonction pour signaler que c'est prêt (si besoin)
+     } catch (error) {
+         console.error(`Impossible de charger ou parser ${filePath}:`, error);
++
++        const cachedDatabase = localStorage.getItem(CHORD_DATABASE_CACHE_KEY);
++        if (cachedDatabase) {
++            try {
++                chordDatabase = JSON.parse(cachedDatabase);
++                console.warn('Base d\'accords chargée depuis le cache local (mode hors-ligne).');
++                onDatabaseLoaded();
++                return;
++            } catch (cacheError) {
++                console.error('Cache local de la base d\'accords invalide :', cacheError);
++                localStorage.removeItem(CHORD_DATABASE_CACHE_KEY);
++            }
++        }
++
+         alert(`Erreur critique : Impossible de charger la bibliothèque d'accords.\nAssurez-vous que le fichier '${filePath}' existe dans le même dossier et que son format JSON est correct.`);
+         // Que faire en cas d'erreur? L'appli est peu utilisable... On pourrait désactiver certaines parties.
+         chordInputElement.disabled = true;
+         chordInputElement.placeholder = "Erreur chargement accords";
+     }
+ }
+ 
+ /** Fonction appelée une fois que la base de données est chargée (peut être étendue) */
+ function onDatabaseLoaded() {
+     /* console.log("La base de données est prête."); */
+     // Si des initialisations dépendent de la base de données, faites-les ici.
+     // Par exemple, valider les accords de la chanson chargée depuis localStorage ?
+ }
+ 
+ function calculateVoicingPosition(voicing) {
+     // ... (Fonction inchangée) ...
+     if (!voicing || !voicing.frets) return 0;
+     let minFret = 99; let foundFrettedNote = false;
+     for (const fret of voicing.frets) {
+         if (fret > 0) {
+             foundFrettedNote = true; minFret = Math.min(minFret, fret);
+         }
+     }
+     return foundFrettedNote ? minFret : 0;
+ }
+@@ -835,97 +851,176 @@ function stopPlayback(resetButtonText = true) {
+         /* console.log("   stopPlayback: Mise à jour bouton -> 'Jouer'"); */ // DEBUG
+         playPauseButton.textContent = '▶️ Jouer la Chanson';
+         playPauseButton.classList.remove('playing');
+     } else {
+         /* console.log("   stopPlayback: resetButtonText=false, apparence bouton inchangée."); */ // DEBUG
+     }
+     /* console.log(">>> stopPlayback FINIE. isPlaying:", isPlaying, "timerId:", timerId); */
+ }
+ 
+ 
+ // ==========================================
+ // PHASE 5: User Input & Sequence Management
+ // ==========================================
+ function renderSequenceList() {
+     // ... (Fonction inchangée - Version CORRIGÉE avec backticks) ...
+     sequenceListElement.innerHTML = '';
+     if (userSequence.length === 0) {
+         sequenceListElement.innerHTML = '<li>(Séquence vide)</li>';
+         return;
+     }
+ 
+     userSequence.forEach((item, index) => {
+         const listItem = document.createElement('li');
+         listItem.textContent = `${index + 1}. ${item.chordId} (${item.duration} temps)`;
+         listItem.dataset.index = index;
++        if (index === previouslyHighlightedStepIndex) {
++            listItem.classList.add('playing-step');
++        }
+         sequenceListElement.appendChild(listItem);
+     });
+ }
+ 
+ 
++function jumpToSequenceStep(stepIndex) {
++    if (stepIndex < 0 || stepIndex >= userSequence.length) {
++        return;
++    }
++
++    sequenceToPlay = userSequence;
++
++    if (isPlaying) {
++        stopPlayback();
++    } else if (previouslyHighlightedStepIndex >= 0) {
++        const previousLi = sequenceListElement.querySelector(`li[data-index="${previouslyHighlightedStepIndex}"]`);
++        if (previousLi) {
++            previousLi.classList.remove('playing-step');
++        }
++        previouslyHighlightedStepIndex = -1;
++    }
++
++    currentStepInSequence = stepIndex;
++    currentBeatInChord = 0;
++    beatCountSinceStart = userSequence
++        .slice(0, stepIndex)
++        .reduce(
++            (totalBeats, sequenceItem) => totalBeats + sequenceItem.duration,
++            0
++        );
++
++    const selectedChordInfo = userSequence[stepIndex];
++    const chordData = getChordData(selectedChordInfo.chordId);
++    const previousVoicing = stepIndex > 0 ? userSequence[stepIndex - 1].voicing : null;
++    const pivotIndices = identifyPivotFingers(previousVoicing, selectedChordInfo.voicing);
++
++    displayChord(
++        chordData ? chordData.name : selectedChordInfo.chordId,
++        selectedChordInfo.voicing,
++        pivotIndices
++    );
++
++    validatedChordId = selectedChordInfo.chordId;
++    proposedVoicing = selectedChordInfo.voicing;
++    previousVoicingInPlayback = selectedChordInfo.voicing;
++
++    const currentLi = sequenceListElement.querySelector(`li[data-index="${stepIndex}"]`);
++    if (currentLi) {
++        currentLi.classList.add('playing-step');
++    }
++    previouslyHighlightedStepIndex = stepIndex;
++}
++
++function pauseOnSequenceStep(stepIndex) {
++    if (stepIndex < 0 || stepIndex >= userSequence.length) {
++        return;
++    }
++
++    if (isPlaying) {
++        stopPlayback();
++    }
++
++    jumpToSequenceStep(stepIndex);
++}
++
++
+ function validateAndDisplayChordInput() {
+     const chordIdentifier = chordInputElement.value.trim();
+     /* console.log(`>>> validateAndDisplayChordInput: Validation pour input='${chordIdentifier}'`); */ // Log Input
+ 
+     const chordData = getChordData(chordIdentifier); // Appel de la fonction loggée ci-dessus
+ 
+     // Log détaillé de ce que getChordData a retourné
+     /* console.log(`>>> validateAndDisplayChordInput: getChordData a retourné -> ${chordData ? `Name='${chordData.name}', Root='${chordData.root}', Quality='${chordData.quality}'` : 'null'}`); */
+ 
+     if (chordData) {
+         validatedChordId = chordData.aliases ? chordData.aliases[0] || chordData.name : chordData.name;
+ 
+         const lastSequenceItem = userSequence.length > 0 ? userSequence[userSequence.length - 1] : null;
+         const lastVoicingInSequence = lastSequenceItem ? lastSequenceItem.voicing : null;
+ 
+         // Appel à la logique de voicing (vient après ce log)
+         proposedVoicing = findBestNextVoicing(lastVoicingInSequence, validatedChordId);
+         /* console.log(`>>> validateAndDisplayChordInput: Voicing proposé pour '${validatedChordId}': Frettes=`, JSON.stringify(proposedVoicing?.frets)); */
+ 
+         if (proposedVoicing) {
+             displayChord(chordData.name, proposedVoicing); // L'affichage utilise chordData.name
+             // /* console.log(`Input validated: ${validatedChordId}, Proposed Voicing:`, proposedVoicing); */
+             // Les boutons +/- sont activés/désactivés dans displayChord maintenant
+         } else {
+             console.warn(`Aucun voicing trouvé pour ${validatedChordId}`);
+             displayChord(chordData.name, null); // Affiche le nom mais pas de diagramme
+             validatedChordId = null; // Invalide si pas de voicing
+             proposedVoicing = null;
+         }
+ 
+     } else {
+         validatedChordId = null;
+         proposedVoicing = null;
+         displayChord(null, null); // Efface l'affichage
+         /* console.log(`Input invalid: ${chordIdentifier}`); */
+     }
+ }
+ // ==========================================
+ // Event Listeners & Initialization
+ // ==========================================
+ 
+ 
++sequenceListElement.addEventListener('click', (event) => {
++    const clickedItem = event.target.closest('li');
++    if (!clickedItem || !sequenceListElement.contains(clickedItem)) {
++        return;
++    }
++
++    const index = parseInt(clickedItem.dataset.index, 10);
++    if (Number.isNaN(index)) {
++        return;
++    }
++
++    pauseOnSequenceStep(index);
++});
++
++
+ // Update tempo/time signature when changed by user AND save
+ tempoInput.addEventListener('change', () => {
+     _updateTempoInternal(); // Met à jour les variables internes
+     // Si on joue, redémarre avec le nouveau tempo
+     if (isPlaying) {
+         stopPlayback(false); // Arrête sans reset bouton
+         startPlayback();     // Redémarre avec nouvelle vitesse
+     }
+     saveCurrentSongState(); // Sauvegarde le nouvel état
+ });
+ 
+ timeSignatureSelect.addEventListener('change', () => {
+     _updateTimeSignatureInternal(); // Met à jour les variables internes
+     // Pas besoin de redémarrer la lecture ici, playTick utilisera la nouvelle valeur de beatsPerMeasure
+     saveCurrentSongState(); // Sauvegarde le nouvel état
+ });
+ 
+ 
+ // Chord Input Listener
+ chordInputElement.addEventListener('input', () => {
+     const inputText = chordInputElement.value.trim();
+     suggestionsElement.innerHTML = '';
+     validatedChordId = null;
+     proposedVoicing = null;
+     voicingDownButton.disabled = true;
+@@ -1440,26 +1535,26 @@ function playNoteSound(noteName) {
+     gainNode.connect(audioCtx.destination);
+ 
+     // Démarre et arrête l'oscillateur
+     oscillator.start(audioCtx.currentTime);
+     oscillator.stop(audioCtx.currentTime + 0.55); // Arrête après la descente
+ }
+ 
+ // ==========================================
+ // PWA Service Worker Registration
+ // ==========================================
+ if ('serviceWorker' in navigator) {
+     window.addEventListener('load', () => {
+         navigator.serviceWorker.register('./service-worker.js') // Chemin relatif au script.js
+             .then(registration => {
+                 /* console.log('Service Worker enregistré avec succès ! Scope:', registration.scope); */
+             })
+             .catch(err => {
+                 console.error('Échec de l\'enregistrement du Service Worker:', err);
+             });
+     });
+ } else {
+     /* console.log('Service Worker non supporté par ce navigateur.'); */
+ }
+ // ==========================================
+ // FIN DU SCRIPT
+-// ==========================================
+\ No newline at end of file
++// ==========================================
