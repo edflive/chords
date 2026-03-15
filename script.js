@@ -413,6 +413,45 @@ function calculateTransitionCost(voicing1, voicing2) {
     return cost;
 }
 
+function getPivotStringIndices(voicing1, voicing2) {
+    const pivotIndices = new Set();
+
+    if (!voicing1 || !voicing2 || !voicing1.frets || !voicing2.frets) {
+        return pivotIndices;
+    }
+
+    for (let i = 0; i < DIAGRAM_STRINGS; i++) {
+        const fret1 = voicing1.frets[i];
+        const fret2 = voicing2.frets[i];
+
+        if (fret1 > 0 && fret1 === fret2) {
+            pivotIndices.add(i);
+        }
+    }
+
+    return pivotIndices;
+}
+
+function getPivotAnalysis(voicing1, voicing2) {
+    const anchored = getPivotStringIndices(voicing1, voicing2);
+    const strict = new Set();
+
+    if (!voicing1 || !voicing2 || !voicing1.fingers || !voicing2.fingers) {
+        return { strict, anchored };
+    }
+
+    anchored.forEach((stringIndex) => {
+        const finger1 = voicing1.fingers[stringIndex];
+        const finger2 = voicing2.fingers[stringIndex];
+
+        if (finger1 > 0 && finger1 === finger2) {
+            strict.add(stringIndex);
+        }
+    });
+
+    return { strict, anchored };
+}
+
 function getElapsedBeatsBeforeStep(sequence, stepIndex) {
     return sequence
         .slice(0, stepIndex)
@@ -448,7 +487,9 @@ function findBestNextVoicing(previousVoicing, nextChordId) {
     candidateVoicings.forEach(candidate => {
         const transitionCost = calculateTransitionCost(previousVoicing, candidate);
         const playabilityCost = getPlayableVoicingWeight(candidate);
-        const cost = (transitionCost * 10) + playabilityCost;
+        const pivotAnalysis = getPivotAnalysis(previousVoicing, candidate);
+        const pivotBonus = (pivotAnalysis.strict.size * 7) + (pivotAnalysis.anchored.size * 3);
+        const cost = (transitionCost * 10) + playabilityCost - pivotBonus;
         if (cost < minCost) {
             minCost = cost;
             bestVoicing = candidate;
@@ -519,9 +560,7 @@ function findVoicing(currentVoicing, currentChordId, direction) {
 }
 
 function identifyPivotFingers(voicing1, voicing2) {
-    // ... (Fonction inchangée) ...
-    const pivotIndices = new Set(); if (!voicing1 || !voicing2 || !voicing1.fingers || !voicing2.fingers || !voicing1.frets || !voicing2.frets) { return pivotIndices; }
-    for (let i = 0; i < DIAGRAM_STRINGS; i++) { if (voicing1.fingers[i] > 0 && voicing1.fingers[i] === voicing2.fingers[i] && voicing1.frets[i] === voicing2.frets[i]) { pivotIndices.add(i); } } return pivotIndices;
+    return getPivotAnalysis(voicing1, voicing2);
 }
 
 // ==========================================
@@ -532,7 +571,11 @@ function createSvgElement(tag, attributes) {
     const element = document.createElementNS(SVG_NS, tag); for (const key in attributes) { element.setAttribute(key, attributes[key]); } return element;
 }
 
-function drawChordDiagram(voicingData, parentElement, pivotIndices = new Set()) {
+function drawChordDiagram(
+    voicingData,
+    parentElement,
+    pivotAnalysis = { strict: new Set(), anchored: new Set() }
+) {
     parentElement.innerHTML = '';
 
     if (!voicingData || !voicingData.frets) {
@@ -663,13 +706,19 @@ function drawChordDiagram(voicingData, parentElement, pivotIndices = new Set()) 
             const barreWidth = barreXEnd - barreXStart;
             const barreHeight = DIAGRAM_DOT_RADIUS * 1.8;
             const barreY = DIAGRAM_START_Y + (1 - 0.5) * DIAGRAM_FRET_SPACING - (barreHeight / 2);
+            const barreIsStrictPivot = Array.from(pivotAnalysis.strict).some(index =>
+                index >= barreInfo.startStringIndex && index <= barreInfo.endStringIndex
+            );
+            const barreIsAnchored = Array.from(pivotAnalysis.anchored).some(index =>
+                index >= barreInfo.startStringIndex && index <= barreInfo.endStringIndex
+            );
 
             svg.appendChild(createSvgElement('rect', {
                 x: barreXStart,
                 y: barreY,
                 width: barreWidth,
                 height: barreHeight,
-                fill: '#333',
+                fill: barreIsStrictPivot ? '#179c52' : barreIsAnchored ? '#63c77b' : '#333',
                 rx: barreHeight / 2,
                 ry: barreHeight / 2
             }));
@@ -692,8 +741,9 @@ function drawChordDiagram(voicingData, parentElement, pivotIndices = new Set()) 
         if (fret > startFretNum && fret <= startFretNum + DIAGRAM_FRETS_TO_SHOW) {
             const dotX = DIAGRAM_START_X + i * DIAGRAM_STRING_SPACING;
             const dotY = DIAGRAM_START_Y + (fret - startFretNum - 0.5) * DIAGRAM_FRET_SPACING;
-            const isPivot = pivotIndices.has(i);
-            const dotColor = isPivot ? '#28a745' : '#333';
+            const isStrictPivot = pivotAnalysis.strict.has(i);
+            const isAnchoredPivot = pivotAnalysis.anchored.has(i);
+            const dotColor = isStrictPivot ? '#179c52' : isAnchoredPivot ? '#63c77b' : '#333';
 
             svg.appendChild(createSvgElement('circle', {
                 cx: dotX,
@@ -721,7 +771,11 @@ function drawChordDiagram(voicingData, parentElement, pivotIndices = new Set()) 
     parentElement.appendChild(svg);
 }
 
-function drawFretboardVisualization(voicingData, parentElement, pivotIndices = new Set()) {
+function drawFretboardVisualization(
+    voicingData,
+    parentElement,
+    pivotAnalysis = { strict: new Set(), anchored: new Set() }
+) {
     parentElement.innerHTML = '';
 
     if (!voicingData) {
@@ -787,9 +841,10 @@ function drawFretboardVisualization(voicingData, parentElement, pivotIndices = n
         if (fretNumber > 0 && fretNumber <= FRETBOARD_FRETS_TO_SHOW) {
             const dotX = FRETBOARD_START_X + (fretNumber - 0.5) * FRETBOARD_FRET_SPACING;
             const dotY = y;
-            const isPivot = pivotIndices.has(i);
-            const dotFillColor = isPivot ? '#28a745' : '#333';
-            const dotStrokeColor = isPivot ? '#0f5132' : '#fff';
+            const isStrictPivot = pivotAnalysis.strict.has(i);
+            const isAnchoredPivot = pivotAnalysis.anchored.has(i);
+            const dotFillColor = isStrictPivot ? '#179c52' : isAnchoredPivot ? '#63c77b' : '#333';
+            const dotStrokeColor = isStrictPivot ? '#0b4f2a' : isAnchoredPivot ? '#2f7d44' : '#fff';
 
             svg.appendChild(createSvgElement('circle', {
                 cx: dotX,
@@ -854,14 +909,18 @@ function drawFretboardVisualization(voicingData, parentElement, pivotIndices = n
  * Met à jour l'affichage principal (nom, diagramme, manche).
  * @param {string | null} chordName - Nom de l'accord.
  * @param {object | null} voicingObject - L'objet voicing à afficher.
- * @param {Set<number>} [pivotIndices=new Set()] - Set des indices de cordes où il y a un pivot.
+ * @param {{strict: Set<number>, anchored: Set<number>}} [pivotAnalysis] - Analyse des ancrages entre deux voicings.
  */
-function displayChord(chordName, voicingObject, pivotIndices = new Set()) {
+function displayChord(
+    chordName,
+    voicingObject,
+    pivotAnalysis = { strict: new Set(), anchored: new Set() }
+) {
     if (chordName && voicingObject) {
         chordNameElement.textContent = chordName;
 
-        drawChordDiagram(voicingObject, diagramContainer, pivotIndices);
-        drawFretboardVisualization(voicingObject, fretboardContainer, pivotIndices);
+        drawChordDiagram(voicingObject, diagramContainer, pivotAnalysis);
+        drawFretboardVisualization(voicingObject, fretboardContainer, pivotAnalysis);
 
         const alternativesExist = (getVoicingsForChord(chordName)?.length || 0) > 1;
         voicingDownButton.disabled = !alternativesExist;
@@ -958,8 +1017,8 @@ function playTick() {
     if (currentBeatInChord === 0) {
         /* console.log(`Displaying: ${currentChordInfo.chordId} (Step <span class="math-inline">\{currentStepInSequence \+ 1\}/</span>{sequenceToPlay.length})`); */
         const chordData = getChordData(currentChordInfo.chordId);
-        const pivotIndices = identifyPivotFingers(previousVoicingInPlayback, currentVoicing);
-        displayChord(chordData ? chordData.name : currentChordInfo.chordId, currentVoicing, pivotIndices);
+        const pivotAnalysis = identifyPivotFingers(previousVoicingInPlayback, currentVoicing);
+        displayChord(chordData ? chordData.name : currentChordInfo.chordId, currentVoicing, pivotAnalysis);
 
         if (previouslyHighlightedStepIndex >= 0) {
             const previousLi = getSequenceStepListItem(previouslyHighlightedStepIndex);
@@ -1019,8 +1078,8 @@ function startPlayback() {
     if (sequenceToPlay.length > 0) {
         const currentChordInfo = sequenceToPlay[currentStepInSequence];
         const chordData = getChordData(currentChordInfo.chordId);
-        const pivotIndices = identifyPivotFingers(previousVoicingInPlayback, currentChordInfo.voicing); // Calcule pivots même si pas le 1er temps ? Oui pour affichage correct si on reprend au milieu.
-        displayChord(chordData ? chordData.name : currentChordInfo.chordId, currentChordInfo.voicing, pivotIndices);
+        const pivotAnalysis = identifyPivotFingers(previousVoicingInPlayback, currentChordInfo.voicing);
+        displayChord(chordData ? chordData.name : currentChordInfo.chordId, currentChordInfo.voicing, pivotAnalysis);
 
         // Highlight (attention si on reprend au milieu d'un accord)
         if (previouslyHighlightedStepIndex !== currentStepInSequence) {
@@ -1195,12 +1254,12 @@ function jumpToSequenceStep(stepIndex) {
     const selectedChordInfo = userSequence[stepIndex];
     const chordData = getChordData(selectedChordInfo.chordId);
     const previousVoicing = stepIndex > 0 ? userSequence[stepIndex - 1].voicing : null;
-    const pivotIndices = identifyPivotFingers(previousVoicing, selectedChordInfo.voicing);
+    const pivotAnalysis = identifyPivotFingers(previousVoicing, selectedChordInfo.voicing);
 
     displayChord(
         chordData ? chordData.name : selectedChordInfo.chordId,
         selectedChordInfo.voicing,
-        pivotIndices
+        pivotAnalysis
     );
 
     validatedChordId = selectedChordInfo.chordId;
@@ -1785,7 +1844,11 @@ function applyLoadedState(loadedState, songName = "") {
     // Affiche le premier accord si la chanson n'est pas vide
     if (userSequence.length > 0 && userSequence[0].voicing) {
         const firstChordData = getChordData(userSequence[0].chordId);
-        displayChord(firstChordData ? firstChordData.name : userSequence[0].chordId, userSequence[0].voicing, new Set());
+        displayChord(
+            firstChordData ? firstChordData.name : userSequence[0].chordId,
+            userSequence[0].voicing,
+            { strict: new Set(), anchored: new Set() }
+        );
     } else {
         displayChord(null, null);
     }
