@@ -4,12 +4,15 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Guitare - Gratte & Chante</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Oswald:wght@400;600;700&family=Open+Sans:wght@400;600;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="style.css">
     <link rel="manifest" href="manifest.json">
     <link rel="icon" type="image/svg+xml" href="app-icon.svg">
     <link rel="alternate icon" href="favicon.ico">
     <link rel="apple-touch-icon" href="icon-192.png">
-    <meta name="theme-color" content="#333333"/>
+    <meta name="theme-color" content="#1a1610"/>
     <meta name="mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
@@ -41,12 +44,13 @@
           </select>
         </div>
         <div class="control-item audio-toggle">
-          <label for="audio-enabled" title="Activer/Désactiver le son (fonctionnalité future)">Audio:</label>
+          <label for="audio-enabled" title="Activer/Désactiver le son de guitare">Son:</label>
           <input type="checkbox" id="audio-enabled" name="audio-enabled">
         </div>
         <div class="control-item playback-controls">
-          <button id="sequence-play-pause-btn" class="button-prominent">▶️ Jouer la chanson</button>
+          <button id="sequence-play-pause-btn" class="button-prominent">&#9654; Jouer</button>
         </div>
+        <button id="theme-toggle-btn" title="Changer le thème (clair / sombre)">🌙</button>
       </div>
       <div id="app-status" class="app-status app-status-info" role="status" aria-live="polite">
         Prêt pour construire une progression.
@@ -104,7 +108,7 @@
                 <input type="number" id="chord-duration" value="2" min="1">
             </div>
             <div class="input-actions">
-                 <button id="add-chord-btn">➕ Ajouter</button>
+                 <button id="add-chord-btn">+ Ajouter</button>
             </div>
         </section> <section class="song-management-sub-area card-layout">
              <h3>Gestion des Chansons</h3>

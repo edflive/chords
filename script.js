@@ -103,6 +103,7 @@ const appStatusElement = document.getElementById('app-status');
 const sequenceCountElement = document.getElementById('sequence-count');
 const sequenceDurationTotalElement = document.getElementById('sequence-duration-total');
 const sequenceHintElement = document.getElementById('sequence-hint');
+const themeToggleBtn = document.getElementById('theme-toggle-btn');
 
 let currentSuggestions = [];
 let selectedSuggestionIndex = -1;
@@ -609,6 +610,8 @@ function drawChordDiagram(
         if (startFretNum < 1) startFretNum = 1;
     }
 
+    const C = getThemeColors();
+
     const topLineWidth = (DIAGRAM_STRINGS - 1) * DIAGRAM_STRING_SPACING;
     const topLeftX = DIAGRAM_START_X;
 
@@ -617,7 +620,7 @@ function drawChordDiagram(
             x: DIAGRAM_START_X - 8,
             y: DIAGRAM_START_Y + DIAGRAM_FRET_SPACING * 0.7,
             'font-size': '12px',
-            fill: '#555',
+            fill: C.fretLabel,
             'text-anchor': 'end'
         });
         fretIndicator.textContent = `${startFretNum + 1}fr`;
@@ -629,7 +632,7 @@ function drawChordDiagram(
         y: DIAGRAM_START_Y - (topIsNut ? DIAGRAM_NUT_HEIGHT / 2 : 1),
         width: topLineWidth,
         height: topIsNut ? DIAGRAM_NUT_HEIGHT : 2,
-        fill: '#666'
+        fill: topIsNut ? C.nut : C.nutLine
     }));
 
     // Frets horizontales
@@ -640,7 +643,7 @@ function drawChordDiagram(
             y1: y,
             x2: DIAGRAM_START_X + topLineWidth,
             y2: y,
-            stroke: '#ccc',
+            stroke: C.diagramFret,
             'stroke-width': 1
         }));
     }
@@ -654,7 +657,7 @@ function drawChordDiagram(
             y1: DIAGRAM_START_Y,
             x2: x,
             y2: DIAGRAM_START_Y + DIAGRAM_FRETS_TO_SHOW * DIAGRAM_FRET_SPACING,
-            stroke: '#aaa',
+            stroke: C.diagramString,
             'stroke-width': 1
         }));
 
@@ -670,8 +673,9 @@ function drawChordDiagram(
                 x: x,
                 y: markerY,
                 'font-size': '14px',
-                fill: '#555',
-                'text-anchor': 'middle'
+                fill: markerText === 'O' ? C.openMarker : C.muteMarker,
+                'text-anchor': 'middle',
+                'font-weight': 'bold'
             });
             textElement.textContent = markerText;
             svg.appendChild(textElement);
@@ -718,7 +722,7 @@ function drawChordDiagram(
                 y: barreY,
                 width: barreWidth,
                 height: barreHeight,
-                fill: barreIsStrictPivot ? '#179c52' : barreIsAnchored ? '#63c77b' : '#333',
+                fill: barreIsStrictPivot ? C.pivotStrict : barreIsAnchored ? C.pivotAnchored : C.dot,
                 rx: barreHeight / 2,
                 ry: barreHeight / 2
             }));
@@ -743,7 +747,7 @@ function drawChordDiagram(
             const dotY = DIAGRAM_START_Y + (fret - startFretNum - 0.5) * DIAGRAM_FRET_SPACING;
             const isStrictPivot = pivotAnalysis.strict.has(i);
             const isAnchoredPivot = pivotAnalysis.anchored.has(i);
-            const dotColor = isStrictPivot ? '#179c52' : isAnchoredPivot ? '#63c77b' : '#333';
+            const dotColor = isStrictPivot ? C.pivotStrict : isAnchoredPivot ? C.pivotAnchored : C.dot;
 
             svg.appendChild(createSvgElement('circle', {
                 cx: dotX,
@@ -754,13 +758,11 @@ function drawChordDiagram(
 
             if ((typeof finger === 'string' && finger.trim() !== '') ||
                 (typeof finger === 'number' && finger > 0)) {
-                // la valeur est soit une chaîne non vide, soit un nombre > 0
-                // if (finger > 0) {
                 svg.appendChild(createSvgElement('text', {
                     x: dotX,
                     y: dotY + DIAGRAM_DOT_RADIUS * 0.4,
                     'font-size': `${DIAGRAM_DOT_RADIUS * 1.2}px`,
-                    fill: '#fff',
+                    fill: C.dotText,
                     'text-anchor': 'middle',
                     'font-weight': 'bold'
                 })).textContent = finger;
@@ -794,12 +796,15 @@ function drawFretboardVisualization(
     const backgroundWidth = (FRETBOARD_START_X + FRETBOARD_FRETS_TO_SHOW * FRETBOARD_FRET_SPACING + 5) - backgroundX;
     const backgroundHeight = (FRETBOARD_STRINGS - 1) * FRETBOARD_STRING_SPACING;
 
+    const CF = getThemeColors();
+
     svg.appendChild(createSvgElement('rect', {
         x: backgroundX,
         y: backgroundY,
         width: backgroundWidth,
         height: backgroundHeight,
-        fill: '#f0e1c1'
+        fill: CF.fretboardBg,
+        rx: 3
     }));
 
     // Sillet
@@ -808,7 +813,7 @@ function drawFretboardVisualization(
         y: FRETBOARD_START_Y,
         width: FRETBOARD_NUT_WIDTH,
         height: backgroundHeight,
-        fill: '#555'
+        fill: CF.nut
     }));
 
     // Frettes
@@ -819,7 +824,7 @@ function drawFretboardVisualization(
             y1: FRETBOARD_START_Y,
             x2: x,
             y2: FRETBOARD_START_Y + backgroundHeight,
-            stroke: '#aaa',
+            stroke: CF.fretLine,
             'stroke-width': 1
         }));
     }
@@ -833,8 +838,8 @@ function drawFretboardVisualization(
             y1: y,
             x2: backgroundX + backgroundWidth,
             y2: y,
-            stroke: '#777',
-            'stroke-width': 1 + (FRETBOARD_STRINGS - 1 - i) * 0.2
+            stroke: CF.string,
+            'stroke-width': 0.8 + (FRETBOARD_STRINGS - 1 - i) * 0.28
         }));
 
         const fretNumber = voicingData.frets[i];
@@ -843,8 +848,8 @@ function drawFretboardVisualization(
             const dotY = y;
             const isStrictPivot = pivotAnalysis.strict.has(i);
             const isAnchoredPivot = pivotAnalysis.anchored.has(i);
-            const dotFillColor = isStrictPivot ? '#179c52' : isAnchoredPivot ? '#63c77b' : '#333';
-            const dotStrokeColor = isStrictPivot ? '#0b4f2a' : isAnchoredPivot ? '#2f7d44' : '#fff';
+            const dotFillColor = isStrictPivot ? CF.pivotStrict : isAnchoredPivot ? CF.pivotAnchored : CF.dot;
+            const dotStrokeColor = isStrictPivot ? '#0b4f2a' : isAnchoredPivot ? '#2f7d44' : CF.dotText;
 
             svg.appendChild(createSvgElement('circle', {
                 cx: dotX,
@@ -870,7 +875,7 @@ function drawFretboardVisualization(
                 cx: markerX,
                 cy: markerY,
                 r: markerRadius,
-                fill: '#adadad'
+                fill: CF.marker
             }));
         }
     });
@@ -891,14 +896,14 @@ function drawFretboardVisualization(
             cx: markerX,
             cy: markerY_Top,
             r: markerRadius,
-            fill: '#adadad'
+            fill: '#3d3222'
         }));
 
         svg.appendChild(createSvgElement('circle', {
             cx: markerX,
             cy: markerY_Bottom,
             r: markerRadius,
-            fill: '#adadad'
+            fill: '#3d3222'
         }));
     }
 
@@ -1000,10 +1005,15 @@ function playTick() {
         return;
     }
 
-    const currentChordInfoForSound = sequenceToPlay[currentStepInSequence];
-    const rootNote = getChordData(currentChordInfoForSound.chordId)?.root; // Trouve la note racine
-    if (rootNote) {
-        playNoteSound(rootNote); // Joue le son si l'audio est activé
+    // Joue le son uniquement au premier temps de l'accord (évite les re-strums sur chaque beat)
+    if (currentBeatInChord === 0) {
+        const currentChordInfoForSound = sequenceToPlay[currentStepInSequence];
+        if (currentChordInfoForSound?.voicing) {
+            playChordStrummed(currentChordInfoForSound.voicing);
+        } else {
+            const rootNote = getChordData(currentChordInfoForSound?.chordId)?.root;
+            if (rootNote) playNoteSound(rootNote);
+        }
     }
 
     // --- AJOUT: Mise à jour du métronome VISUEL ---
@@ -1449,11 +1459,24 @@ chordInputElement.addEventListener('input', () => {
         return;
     }
 
-    const matches = chordDatabase.filter(chord => {
-        const inputLower = inputText.toLowerCase();
-        return chord.name.toLowerCase().startsWith(inputLower) ||
-            (chord.aliases && chord.aliases.some(alias => alias.toLowerCase().startsWith(inputLower)));
-    });
+    const inputLower = inputText.toLowerCase();
+    const matches = chordDatabase
+        .filter(chord =>
+            chord.name.toLowerCase().startsWith(inputLower) ||
+            (chord.aliases && chord.aliases.some(a => a.toLowerCase().startsWith(inputLower)))
+        )
+        .sort((a, b) => {
+            // Priorité 1 : le nom principal commence par la saisie
+            const aName = a.name.toLowerCase().startsWith(inputLower);
+            const bName = b.name.toLowerCase().startsWith(inputLower);
+            if (aName !== bName) return aName ? -1 : 1;
+            // Priorité 2 : le premier alias commence par la saisie (pas seulement un alias secondaire)
+            const aFirst = a.aliases?.[0]?.toLowerCase().startsWith(inputLower) ?? false;
+            const bFirst = b.aliases?.[0]?.toLowerCase().startsWith(inputLower) ?? false;
+            if (aFirst !== bFirst) return aFirst ? -1 : 1;
+            // Alphabétique sur le nom
+            return a.name.localeCompare(b.name);
+        });
 
     if (matches.length > 0) {
         renderSuggestions(matches);
@@ -1642,13 +1665,69 @@ audioEnabledCheckbox.addEventListener('change', () => {
 });
 
 
+// ==========================================
+// Gestion du thème (clair / sombre)
+// ==========================================
+
+const THEME_STORAGE_KEY = 'guitarAppTheme';
+
+function applyTheme(theme) {
+    const root = document.documentElement;
+    if (theme === 'dark') {
+        root.setAttribute('data-theme', 'dark');
+        if (themeToggleBtn) themeToggleBtn.textContent = '☀';
+        themeToggleBtn && (themeToggleBtn.title = 'Passer en mode clair');
+    } else if (theme === 'light') {
+        root.setAttribute('data-theme', 'light');
+        if (themeToggleBtn) themeToggleBtn.textContent = '🌙';
+        themeToggleBtn && (themeToggleBtn.title = 'Passer en mode sombre');
+    } else {
+        // 'auto' : retire l'attribut, laisse le système décider
+        root.removeAttribute('data-theme');
+        const sysDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+        if (themeToggleBtn) themeToggleBtn.textContent = sysDark ? '☀' : '🌙';
+    }
+}
+
+function initTheme() {
+    const saved = localStorage.getItem(THEME_STORAGE_KEY); // 'dark' | 'light' | null
+    if (saved === 'dark' || saved === 'light') {
+        applyTheme(saved);
+    } else {
+        applyTheme('auto');
+    }
+}
+
+if (themeToggleBtn) {
+    themeToggleBtn.addEventListener('click', () => {
+        const current = document.documentElement.getAttribute('data-theme');
+        const sysDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+        const effectiveDark = current === 'dark' || (current === null && sysDark);
+        const next = effectiveDark ? 'light' : 'dark';
+        applyTheme(next);
+        localStorage.setItem(THEME_STORAGE_KEY, next);
+
+        // Redessine le diagramme actuel avec les nouvelles couleurs
+        const stepIndex = isPlaying ? currentStepInSequence : previouslyHighlightedStepIndex;
+        if (stepIndex >= 0 && userSequence[stepIndex]) {
+            const step = userSequence[stepIndex];
+            const chordData = getChordData(step.chordId);
+            const prevVoicing = stepIndex > 0 ? userSequence[stepIndex - 1].voicing : null;
+            const pivotAnalysis = identifyPivotFingers(prevVoicing, step.voicing);
+            displayChord(chordData ? chordData.name : step.chordId, step.voicing, pivotAnalysis);
+        } else if (proposedVoicing && validatedChordId) {
+            const chordData = getChordData(validatedChordId);
+            displayChord(chordData ? chordData.name : validatedChordId, proposedVoicing);
+        }
+    });
+}
+
 // Initialization on Load (devient async pour attendre la BDD)
-document.addEventListener('DOMContentLoaded', async () => { // <<< Ajout de async
-    /* console.log("DOM chargé initialisation..."); */
+document.addEventListener('DOMContentLoaded', async () => {
+    initTheme();
 
-    await loadChordDatabase(); // <<< Attend que le JSON soit chargé
+    await loadChordDatabase();
 
-    // Le reste de l'initialisation (qui peut maintenant utiliser chordDatabase via les fonctions getChordData etc.)
     loadCurrentSongState();
     audioEnabledCheckbox.checked = isAudioEnabled;
     voicingDownButton.disabled = true;
@@ -1658,8 +1737,6 @@ document.addEventListener('DOMContentLoaded', async () => { // <<< Ajout de asyn
     updateSequenceSummary();
     updateActionStates();
     setStatus("Base d'accords chargee. Tu peux saisir ton prochain accord.", 'success');
-
-    /* console.log("Initialisation terminée."); */
 });
 
 
@@ -1901,47 +1978,147 @@ function initAudio() {
     }
 }
 
-// ACTION: Ajoutez cette NOUVELLE fonction (par exemple après initAudio)
+// Fréquences des cordes à vide (E2, A2, D3, G3, B3, E4)
+const OPEN_STRING_FREQUENCIES = [82.41, 110.00, 146.83, 196.00, 246.94, 329.63];
 
-/** Joue un son synthétisé simple pour une note donnée */
+/** Retourne les couleurs SVG adaptées au thème actif */
+function getThemeColors() {
+    const attr = document.documentElement.getAttribute('data-theme');
+    const sysDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+    const isDark = attr === 'dark' || (attr !== 'light' && sysDark);
+
+    if (isDark) {
+        return {
+            fretboardBg:   '#1e1206',
+            nut:           '#c8a050',
+            nutLine:       '#5a4e38',
+            fretLine:      '#4a3828',
+            diagramFret:   '#3d3028',
+            string:        '#8a7040',
+            diagramString: '#7a6840',
+            dot:           '#c8932a',
+            dotText:       '#1a1410',
+            pivotStrict:   '#179c52',
+            pivotAnchored: '#63c77b',
+            openMarker:    '#c8932a',
+            muteMarker:    '#5a4e40',
+            fretLabel:     '#9a8870',
+            marker:        '#3d3222',
+        };
+    } else {
+        return {
+            fretboardBg:   '#e8d4a0',
+            nut:           '#8a5818',
+            nutLine:       '#c0a870',
+            fretLine:      '#b89060',
+            diagramFret:   '#c8b080',
+            string:        '#9a8050',
+            diagramString: '#8a7040',
+            dot:           '#b07820',
+            dotText:       '#ffffff',
+            pivotStrict:   '#1a8a48',
+            pivotAnchored: '#4aaa6a',
+            openMarker:    '#b07820',
+            muteMarker:    '#a09060',
+            fretLabel:     '#7a6040',
+            marker:        '#c8b080',
+        };
+    }
+}
+
+/**
+ * Génère un buffer audio par l'algorithme Karplus-Strong (corde pincée synthétique).
+ * Produit un son proche d'une vraie corde de guitare.
+ */
+function createPluckedStringBuffer(frequency, duration = 2.8) {
+    const sampleRate = audioCtx.sampleRate;
+    const N = Math.round(sampleRate / frequency); // Longueur d'une période
+    const totalSamples = Math.round(sampleRate * duration);
+    const buffer = audioCtx.createBuffer(1, totalSamples, sampleRate);
+    const data = buffer.getChannelData(0);
+
+    // Initialise le premier cycle avec du bruit blanc (excitation de la corde)
+    for (let i = 0; i < N; i++) {
+        data[i] = Math.random() * 2 - 1;
+    }
+
+    // Iteration Karplus-Strong : filtre moyenneur → résonance décroissante
+    // Le coefficient 0.994 contrôle la durée de sustain
+    for (let i = N; i < totalSamples; i++) {
+        data[i] = 0.994 * 0.5 * (data[i - N] + data[i - (N - 1 < 1 ? 1 : N - 1)]);
+    }
+
+    return buffer;
+}
+
+/**
+ * Joue un accord en arpège rapide (strum) avec synthèse Karplus-Strong.
+ * Chaque corde démarre avec un léger décalage pour simuler le coup de médiator.
+ */
+function playChordStrummed(voicing) {
+    if (!isAudioEnabled || !audioCtx) return;
+    if (audioCtx.state === 'suspended') { audioCtx.resume(); return; }
+    if (!voicing || !voicing.frets) return;
+
+    const strumInterval = 0.028; // 28ms entre chaque corde
+    const playedStrings = voicing.frets.filter(f => f >= 0).length;
+    if (playedStrings === 0) return;
+
+    const masterGain = audioCtx.createGain();
+    // Léger eq grave pour chaleur
+    const bassFilter = audioCtx.createBiquadFilter();
+    bassFilter.type = 'peaking';
+    bassFilter.frequency.value = 200;
+    bassFilter.gain.value = 3;
+    bassFilter.Q.value = 1;
+
+    masterGain.connect(bassFilter);
+    bassFilter.connect(audioCtx.destination);
+
+    voicing.frets.forEach((fret, stringIndex) => {
+        if (fret < 0) return; // corde étouffée
+
+        const openFreq = OPEN_STRING_FREQUENCIES[stringIndex];
+        const frequency = openFreq * Math.pow(2, fret / 12);
+        const startDelay = stringIndex * strumInterval;
+
+        const ksBuffer = createPluckedStringBuffer(frequency);
+        const source = audioCtx.createBufferSource();
+        source.buffer = ksBuffer;
+
+        const gainNode = audioCtx.createGain();
+        const vol = 0.38 / playedStrings;
+        gainNode.gain.setValueAtTime(0, audioCtx.currentTime + startDelay);
+        gainNode.gain.linearRampToValueAtTime(vol, audioCtx.currentTime + startDelay + 0.003);
+
+        source.connect(gainNode);
+        gainNode.connect(masterGain);
+
+        source.start(audioCtx.currentTime + startDelay);
+        source.stop(audioCtx.currentTime + startDelay + 3.2);
+    });
+}
+
+/** Conservé pour compatibilité — utilise désormais le strum complet si un voicing est disponible */
 function playNoteSound(noteName) {
-    // Vérifie si l'audio est activé et initialisé
     if (!isAudioEnabled || !audioCtx || audioCtx.state === 'suspended') {
-        // Si suspendu (arrive parfois), essaie de reprendre
-        if (audioCtx && audioCtx.state === 'suspended') {
-            audioCtx.resume();
-        }
+        if (audioCtx && audioCtx.state === 'suspended') audioCtx.resume();
         return;
     }
 
-    // Trouve la fréquence (simplifié: prend octave 4 par défaut)
-    const frequency = noteFrequencies[noteName] || noteFrequencies[noteName.toUpperCase()] || noteFrequencies['A4']; // Prend A4 si inconnu
+    const frequency = noteFrequencies[noteName] || noteFrequencies[noteName.toUpperCase()] || noteFrequencies['A4'];
+    if (!frequency) return;
 
-    if (!frequency) {
-        console.warn(`Fréquence non trouvée pour la note: ${noteName}`);
-        return;
-    }
+    const ksBuffer = createPluckedStringBuffer(frequency, 2.0);
+    const source = audioCtx.createBufferSource();
+    source.buffer = ksBuffer;
 
-    // Crée les noeuds audio
-    const oscillator = audioCtx.createOscillator();
     const gainNode = audioCtx.createGain();
-
-    // Configure l'oscillateur
-    oscillator.type = 'triangle'; // 'sine', 'square', 'sawtooth', 'triangle'
-    oscillator.frequency.setValueAtTime(frequency, audioCtx.currentTime);
-
-    // Configure le gain (volume et enveloppe très simple pour éviter clic)
-    gainNode.gain.setValueAtTime(0, audioCtx.currentTime); // Commence à 0
-    gainNode.gain.linearRampToValueAtTime(0.4, audioCtx.currentTime + 0.01); // Rapide montée (Attack)
-    gainNode.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + 0.5); // Descente (Decay/Release)
-
-    // Connecte les noeuds : oscillator -> gain -> sortie
-    oscillator.connect(gainNode);
+    gainNode.gain.setValueAtTime(0.4, audioCtx.currentTime);
+    source.connect(gainNode);
     gainNode.connect(audioCtx.destination);
-
-    // Démarre et arrête l'oscillateur
-    oscillator.start(audioCtx.currentTime);
-    oscillator.stop(audioCtx.currentTime + 0.55); // Arrête après la descente
+    source.start(audioCtx.currentTime);
+    source.stop(audioCtx.currentTime + 2.5);
 }
 
 // ==========================================
