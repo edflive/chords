@@ -414,6 +414,28 @@ function calculateTransitionCost(voicing1, voicing2) {
     return cost;
 }
 
+function getBarreCoveredStrings(voicing) {
+    const covered = new Set();
+    if (!voicing || !voicing.frets || !voicing.fingers) return covered;
+
+    // Finger 1 pressing 2+ strings at the same fret = barre
+    const fretByFinger1 = {};
+    const stringsByFretFinger1 = {};
+    for (let i = 0; i < DIAGRAM_STRINGS; i++) {
+        if (voicing.fingers[i] === 1 && voicing.frets[i] > 0) {
+            const fret = voicing.frets[i];
+            if (!stringsByFretFinger1[fret]) stringsByFretFinger1[fret] = [];
+            stringsByFretFinger1[fret].push(i);
+        }
+    }
+    for (const fret in stringsByFretFinger1) {
+        if (stringsByFretFinger1[fret].length >= 2) {
+            stringsByFretFinger1[fret].forEach(i => covered.add(i));
+        }
+    }
+    return covered;
+}
+
 function getPivotStringIndices(voicing1, voicing2) {
     const pivotIndices = new Set();
 
@@ -421,11 +443,15 @@ function getPivotStringIndices(voicing1, voicing2) {
         return pivotIndices;
     }
 
+    const barre1 = getBarreCoveredStrings(voicing1);
+    const barre2 = getBarreCoveredStrings(voicing2);
+
     for (let i = 0; i < DIAGRAM_STRINGS; i++) {
         const fret1 = voicing1.frets[i];
         const fret2 = voicing2.frets[i];
 
-        if (fret1 > 0 && fret1 === fret2) {
+        // Same fret, but exclude strings where the technique changes (individual ↔ barre)
+        if (fret1 > 0 && fret1 === fret2 && !barre1.has(i) && !barre2.has(i)) {
             pivotIndices.add(i);
         }
     }
@@ -710,12 +736,13 @@ function drawChordDiagram(
             const barreWidth = barreXEnd - barreXStart;
             const barreHeight = DIAGRAM_DOT_RADIUS * 1.8;
             const barreY = DIAGRAM_START_Y + (1 - 0.5) * DIAGRAM_FRET_SPACING - (barreHeight / 2);
-            const barreIsStrictPivot = Array.from(pivotAnalysis.strict).some(index =>
-                index >= barreInfo.startStringIndex && index <= barreInfo.endStringIndex
+            // Only color barre green if a pivot string is actually covered by the barre finger
+            // (not just spatially between start/end — other fingers may occupy strings in between)
+            const barreCoveredByFinger = new Set(
+                barreStrings.filter(i => voicingData.fingers[i] === barreInfo.finger)
             );
-            const barreIsAnchored = Array.from(pivotAnalysis.anchored).some(index =>
-                index >= barreInfo.startStringIndex && index <= barreInfo.endStringIndex
-            );
+            const barreIsStrictPivot = Array.from(pivotAnalysis.strict).some(i => barreCoveredByFinger.has(i));
+            const barreIsAnchored = Array.from(pivotAnalysis.anchored).some(i => barreCoveredByFinger.has(i));
 
             svg.appendChild(createSvgElement('rect', {
                 x: barreXStart,
